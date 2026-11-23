@@ -24,6 +24,7 @@ test('sign up: checks the form, then signs the new customer in', async ({ page }
   const email = `new-${n}${DOMAIN}`;
   await page.goto('/');
   await nav(page).getByRole('link', { name: 'เข้าสู่ระบบ' }).click();
+  await expect(page).toHaveURL(/\/account\/login/);                     // let the navigation settle before the next click
   await page.getByRole('link', { name: 'สมัครสมาชิก' }).click();
   await expect(page).toHaveURL(/\/account\/register/);
 

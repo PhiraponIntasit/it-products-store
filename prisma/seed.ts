@@ -3,7 +3,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { ROLE_PERMS, type Role } from '../src/lib/domain';
-import { seedSales, seedStore } from './seed-store';
+import { seedSales, seedStore, seedPromotions } from './seed-store';
 import { seedDemo } from './seed-demo';
 
 const db = new PrismaClient();
@@ -73,6 +73,7 @@ async function main() {
     addresses: { create: { name: 'มานี ใจดี', phone: '0899999999', line1: '99/1 ถนนนิมมานเหมินท์', subdistrict: 'สุเทพ', district: 'เมืองเชียงใหม่', province: 'เชียงใหม่', postcode: '50200', isDefault: true } } } });
   await seedSales(db, hash);
   await seedDemo(db);
+  await seedPromotions(db);
 
   const prs = [
     { id: 'PR-2026-0014', date: daysAgo(1, 16, 0), requesterId: 'u6', vendor: 'บจก. ออฟฟิศเมท ซัพพลาย', note: 'หมึกใกล้หมด', status: 'pending', lines: [{ sku: 'TON-HP26', name: 'HP 26A Toner Cartridge', unit: 'กล่อง', qty: 6, price: 2750 }] },

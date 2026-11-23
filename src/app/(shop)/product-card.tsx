@@ -1,5 +1,7 @@
 import Link from 'next/link';
-import type { ProductCard as Card } from '@/server/storefront';
+import type { ProductCard as BaseCard } from '@/server/storefront';
+
+type Card = BaseCard & { saleEndsAt?: string | null };
 import { LogoMark } from '@/components/logo';
 import { baht } from '@/lib/domain';
 import css from './storefront.module.css';
@@ -16,11 +18,19 @@ export function NoPicture({ label, size = 40 }: { label: string; size?: number }
   return <span className={css.noPic}><LogoMark size={size} />{label}</span>;
 }
 
+const off = (p: Card) => (p.compareAt != null && p.compareAt > p.price ? Math.round((1 - p.price / p.compareAt) * 100) : 0);
+
 export function ProductCard({ p }: { p: Card }) {
   return (
     <Link href={`/p/${p.slug}`} className={css.card} data-sku={p.sku}>
       <div className={css.pic} style={p.image ? { backgroundImage: `url(${p.image})` } : undefined}>
         {!p.image && <NoPicture label={p.category} />}
+        {(p.saleEndsAt || off(p) > 0) && (
+          <span className={css.flags}>
+            {p.saleEndsAt && <span className={css.flagFlash}>FLASH SALE</span>}
+            {off(p) > 0 && <span className={css.flagOff}>−{off(p)}%</span>}
+          </span>
+        )}
       </div>
       <div className={css.cardBody}>
         {p.brand && <span className={css.cardBrand}>{p.brand}</span>}

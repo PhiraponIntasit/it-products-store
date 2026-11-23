@@ -3,6 +3,7 @@ import { db } from './db';
 import { cardInclude, cardOf, type ProductCard } from './storefront';
 import { checkBuild, estimateWatts, issuesIfChosen, isSlot, missingSlots, recommendedPsu, SLOTS, type Build, type Issue, type Slot } from '@/lib/compat';
 import { specFieldsFor, specText, type Specs } from '@/lib/specs';
+import { salesFor, type Sale } from './pricing';
 
 // PC builder (person A). The build lives in the URL (/build?cpu=SKU&mainboard=SKU…), so it works for guests,
 // can be shared as a link, and survives reloads. Customers can also save it as a PcBuild.
@@ -44,14 +45,21 @@ function partOf(row: Parameters<typeof cardOf>[0]): BuildPart {
   return { ...cardOf(row), specs, specLine: specLine(row.category?.slug ?? '', specs) };
 }
 
+/** A part with a running flash-sale price applied (see pricing.ts). */
+function onSale(p: BuildPart, sales: Map<string, Sale>): BuildPart {
+  const s = sales.get(p.sku);
+  return s ? { ...p, price: s.price, compareAt: Math.max(p.compareAt ?? 0, s.was) } : p;
+}
+
 /** Loads the selected parts. A SKU that is unknown, hidden, or from another category is dropped. */
 export async function loadBuild(sel: Selection) {
   const skus = Object.values(sel).filter(Boolean) as string[];
   const rows = skus.length ? await db.inventoryItem.findMany({ where: { sku: { in: skus }, active: true }, include: cardInclude }) : [];
   const parts: Partial<Record<Slot, BuildPart>> = {};
+  const sales = await salesFor(rows.map(r => r.sku));
   for (const { key } of SLOTS) {
     const r = rows.find(x => x.sku === sel[key] && x.category?.slug === key);
-    if (r) parts[key] = partOf(r);
+    if (r) parts[key] = onSale(partOf(r), sales);
   }
   const build: Build = Object.fromEntries(Object.entries(parts).map(([k, p]) => [k, { sku: p!.sku, name: p!.name, specs: p!.specs }]));
   const issues = checkBuild(build);
@@ -75,8 +83,9 @@ export type Candidate = BuildPart & { issues: Issue[] };
 export async function candidates(slot: Slot, build: Build): Promise<Candidate[]> {
   const rows = await db.inventoryItem.findMany({ where: { active: true, category: { slug: slot } }, include: cardInclude, orderBy: [{ price: 'asc' }, { sku: 'asc' }] });
   const rank = (c: Candidate) => (c.issues.length ? 2 : 0) + (c.available < 1 ? 1 : 0);
+  const sales = await salesFor(rows.map(r => r.sku));
   return rows.map(r => {
-    const p = partOf(r);
+    const p = onSale(partOf(r), sales);
     return { ...p, issues: issuesIfChosen(build, slot, { sku: p.sku, name: p.name, specs: p.specs }) };
   }).sort((a, z) => rank(a) - rank(z) || a.price - z.price);
 }
@@ -89,13 +98,14 @@ export async function myBuilds(customerId: string) {
     where: { customerId }, orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
     include: { items: { include: { item: { select: { name: true, price: true, active: true } } } } },
   });
+  const sales = await salesFor(rows.flatMap(b => b.items.map(i => i.sku)));
   return rows.map(b => {
     const sel = Object.fromEntries(b.items.map(i => [i.slot, i.sku])) as Selection;
     const items = SLOTS.map(s => b.items.find(i => i.slot === s.key)).filter(i => !!i);
     return {
       id: b.id, name: b.name, createdAt: b.createdAt, href: buildHref(sel),
       parts: items.map(i => ({ slot: i.slot as Slot, name: i.item.name, gone: !i.item.active })),
-      total: items.filter(i => i.item.active).reduce((a, i) => a + Number(i.item.price) * i.qty, 0),
+      total: items.filter(i => i.item.active).reduce((a, i) => a + (sales.get(i.sku)?.price ?? Number(i.item.price)) * i.qty, 0),
     };
   });
 }

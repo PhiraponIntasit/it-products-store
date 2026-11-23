@@ -1,7 +1,7 @@
 // Domain constants & pure helpers shared by server and client.
 
 export const MODULES = [
-  ['dashboard', 'แดชบอร์ดภาพรวม'], ['inventory', 'คลังสินค้า'], ['products', 'สินค้า & ราคาขาย'], ['orders', 'คำสั่งซื้อ & จัดส่ง'], ['coupons', 'คูปองส่วนลด'], ['warranty', 'ตรวจประกัน & เปลี่ยนสินค้า'], ['claims', 'เคลมสินค้า'], ['customers', 'ลูกค้า'], ['sales', 'รายงานยอดขาย'],
+  ['dashboard', 'แดชบอร์ดภาพรวม'], ['inventory', 'คลังสินค้า'], ['products', 'สินค้า & ราคาขาย'], ['orders', 'คำสั่งซื้อ & จัดส่ง'], ['coupons', 'คูปอง & โปรโมชั่น'], ['warranty', 'ตรวจประกัน & เปลี่ยนสินค้า'], ['claims', 'เคลมสินค้า'], ['customers', 'ลูกค้า'], ['sales', 'รายงานยอดขาย'],
   ['purchase', 'ใบขอซื้อ / ใบสั่งซื้อ'], ['approvals', 'อนุมัติการสั่งซื้อ'],
   ['users', 'บัญชีผู้ใช้ & สิทธิ์'], ['audit', 'Audit Log'],
 ] as const;
@@ -17,7 +17,7 @@ export const MOD_PATH: Record<Module, string> = {
 
 export const HDR: Record<Module, [string, string]> = {
   dashboard: ['ภาพรวมระบบ', 'แดชบอร์ดผู้บริหาร'], inventory: ['Inventory', 'คลังสินค้า & สต็อก'],
-  products: ['Catalog', 'สินค้า & ราคาขาย'], orders: ['Sales', 'คำสั่งซื้อ & การจัดส่ง'], coupons: ['Promotion', 'คูปองส่วนลด'], warranty: ['After-sales', 'ตรวจประกันและเปลี่ยนสินค้าตาม Serial'], claims: ['After-sales', 'เคลมสินค้าจากลูกค้า'], customers: ['CRM', 'บัญชีลูกค้าหน้าร้าน'], sales: ['Sales Report', 'ยอดขาย กำไร และสินค้าขายดี'],
+  products: ['Catalog', 'สินค้า & ราคาขาย'], orders: ['Sales', 'คำสั่งซื้อ & การจัดส่ง'], coupons: ['Promotion', 'คูปองส่วนลด & โปรโมชั่นหน้าร้าน'], warranty: ['After-sales', 'ตรวจประกันและเปลี่ยนสินค้าตาม Serial'], claims: ['After-sales', 'เคลมสินค้าจากลูกค้า'], customers: ['CRM', 'บัญชีลูกค้าหน้าร้าน'], sales: ['Sales Report', 'ยอดขาย กำไร และสินค้าขายดี'],
   purchase: ['Procurement', 'ใบขอซื้อ & ใบสั่งซื้อ'], approvals: ['Procurement', 'อนุมัติการสั่งซื้อ'],
   users: ['Administration', 'บัญชีผู้ใช้ & สิทธิ์การเข้าถึง'], audit: ['Compliance', 'Audit Log · บันทึกการใช้งานระบบ'],
 };

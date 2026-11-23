@@ -233,3 +233,57 @@
 .claimLog li .muted { font-size: 12px; }
 .claimPhotos { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
 .claimPhotos img { object-fit: cover; border-radius: 8px; border: 1px solid var(--color-divider); }
+
+/* ── home page: banners, services, flash sale, coupons, brands ── */
+.heroGrid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 14px; }
+.carousel { position: relative; min-width: 0; }
+.banner { display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; min-height: 250px; padding: 28px 30px; border-radius: var(--radius-lg);
+  color: #fff; text-decoration: none; background-image: radial-gradient(120% 140% at 100% 0%, rgba(255,255,255,.16) 0, rgba(255,255,255,0) 55%); }
+.banner:hover { color: #fff; }
+.toneCobalt { background-color: #1c45b4; }
+.toneSlate { background-color: #1e293b; }
+.toneTeal { background-color: #0f5a56; }
+.toneViolet { background-color: #4a2a99; }
+.bannerKicker { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.bannerTitle { font-size: 30px; line-height: 1.25; max-width: 22ch; }
+.bannerSub { font-size: 16px; line-height: 1.5; max-width: 46ch; }
+.bannerCta { margin-top: 6px; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
+.dots { position: absolute; right: 18px; bottom: 16px; display: flex; gap: 6px; }
+.dot, .dotOn { width: 10px; height: 10px; padding: 0; border-radius: 999px; border: 2px solid #fff; background: transparent; cursor: pointer; }
+.dotOn { background: #fff; width: 22px; }
+.heroSide { display: grid; gap: 14px; }
+.sideCard { display: flex; flex-direction: column; gap: 6px; padding: 18px 20px; border-radius: var(--radius-lg); border: 1px solid var(--color-divider);
+  background: var(--color-surface); color: var(--color-text); text-decoration: none; }
+.sideCard:hover { border-color: var(--color-accent); color: var(--color-text); }
+.sideCard strong { font-size: 18px; }
+.sideCard span { font-size: 14px; color: var(--color-text-2); line-height: 1.5; }
+.sideCard .sideCta { margin-top: auto; color: var(--color-accent-800); font-weight: 600; }
+.services { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.services li { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: var(--radius-md); background: var(--color-accent-100); font-size: 13px; color: var(--color-accent-900); line-height: 1.5; }
+.services strong { font-size: 15px; color: var(--color-text); }
+.flash { margin-top: 32px; padding: 18px; border-radius: var(--radius-lg); background: var(--color-accent-100); border: 1px solid var(--color-accent-200); }
+.flashHead { display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 14px; }
+.flashHead h2 { margin: 0; font-size: 22px; }
+.flashHead p { margin: 4px 0 0; font-size: 14px; color: var(--color-text-2); }
+.flashTimer { display: flex; gap: 10px; align-items: center; font-size: 14px; color: var(--color-text); }
+.countdown { display: inline-flex; gap: 4px; align-items: center; font-weight: 700; font-size: 18px; }
+.countdown span { padding: 4px 8px; border-radius: 8px; background: var(--color-text); color: var(--color-bg); }
+.coupons { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.coupon { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 14px 16px; border-radius: var(--radius-md);
+  border: 2px dashed var(--color-accent-300); background: var(--color-surface); }
+.coupon > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.coupon strong { font-size: 18px; letter-spacing: .04em; }
+.coupon span { font-size: 13px; color: var(--color-text-2); }
+.brands { display: flex; flex-wrap: wrap; gap: 8px; }
+.brands a { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--color-divider); background: var(--color-surface); color: var(--color-text); text-decoration: none; font-size: 14px; }
+.brands a:hover { border-color: var(--color-accent); }
+.pic { position: relative; }
+.flags { position: absolute; left: 8px; top: 8px; display: flex; gap: 4px; flex-wrap: wrap; }
+.flagFlash, .flagOff { font-variant-numeric: tabular-nums; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #fff; }
+.flagFlash { background: #b91c1c; }
+.flagOff { background: #1c45b4; }
+@media (max-width: 860px) {
+  .heroGrid { grid-template-columns: 1fr; }
+  .banner { min-height: 200px; padding: 22px; }
+  .bannerTitle { font-size: 24px; }
+}

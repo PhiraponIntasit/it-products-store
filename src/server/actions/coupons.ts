@@ -36,7 +36,7 @@ export async function saveCoupon(existing: string | null, f: Record<string, stri
     if (endsAt <= startsAt) throw new Fail('วันสิ้นสุดต้องไม่ก่อนวันเริ่ม');
     const usageLimit = str(f.usageLimit) ? parseInt(f.usageLimit, 10) : null;
     if (usageLimit != null && !(usageLimit > 0)) throw new Fail('จำนวนสิทธิ์ต้องมากกว่า 0 หรือเว้นว่างถ้าไม่จำกัด');
-    const data = { kind, value, maxDiscount, minSpend: Math.round(minSpend * 100) / 100, startsAt, endsAt, usageLimit, oncePerCustomer: f.oncePerCustomer === 'true', note: str(f.note).slice(0, 200) };
+    const data = { kind, value, maxDiscount, minSpend: Math.round(minSpend * 100) / 100, startsAt, endsAt, usageLimit, oncePerCustomer: f.oncePerCustomer === 'true', showOnShop: f.showOnShop === 'true', note: str(f.note).slice(0, 200) };
 
     await db.$transaction(async tx => {
       if (existing) {

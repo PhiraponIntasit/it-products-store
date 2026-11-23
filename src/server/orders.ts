@@ -11,6 +11,7 @@ import { provinceOf, shippingFee, shippingNote } from '@/lib/shipping';
 import { baht, DISPLAY_TZ } from '@/lib/domain';
 import { appUrl, sendMail } from './mail';
 import { checkCoupon, claimCoupon, releaseCoupon } from './coupons';
+import { salesFor } from './pricing';
 
 // Checkout → payment → stock, all on the server (amounts never come from the browser):
 //   placeOrder   cart → Order(pending_payment) + hold stock (reserved) + Payment with a PromptPay QR, one transaction
@@ -39,8 +40,9 @@ export type CheckoutLine = { sku: string; name: string; price: number; cost: num
 
 export async function cartLines(customerId: string): Promise<CheckoutLine[]> {
   const cart = await db.cart.findUnique({ where: { customerId }, include: { items: { include: { item: true }, orderBy: { sku: 'asc' } } } });
+  const sales = await salesFor((cart?.items ?? []).map(ci => ci.sku)); // a running flash sale is the price charged
   return (cart?.items ?? []).map(ci => ({
-    sku: ci.sku, name: ci.item.name, price: num(ci.item.price), cost: num(ci.item.cost), qty: ci.qty,
+    sku: ci.sku, name: ci.item.name, price: sales.get(ci.sku)?.price ?? num(ci.item.price), cost: num(ci.item.cost), qty: ci.qty,
     available: ci.item.qty - ci.item.reserved, active: ci.item.active,
   }));
 }

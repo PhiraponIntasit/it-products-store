@@ -214,3 +214,4 @@ a:hover { color: var(--color-accent-800); }
   #po-print, .print-sheet { width: 100%; margin: 0; background: #fff !important; box-shadow: none !important; border: 0 !important; }
 }
 .nw { white-space: nowrap; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

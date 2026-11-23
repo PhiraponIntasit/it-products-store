@@ -6,6 +6,7 @@ import { baht } from '@/lib/domain';
 import { ProductGrid, StockNote } from '../../product-card';
 import { Gallery } from './gallery';
 import { AddToCart } from './add-to-cart';
+import { Countdown } from '../../home-widgets';
 import css from '../../storefront.module.css';
 
 type Props = { params: Promise<{ slug: string }> };
@@ -36,6 +37,7 @@ export default async function ProductPage({ params }: Props) {
             <span className={`${css.bigPrice} tnum`}>{baht(p.price)}</span>
             {off > 0 && <><span className={`${css.was} tnum`}>{baht(p.compareAt!)}</span><span className="tag tag-accent tnum">ลด {baht(off)}</span></>}
           </div>
+          {p.saleEndsAt && <div className={css.flashTimer} data-testid="flash-note"><span className={css.flagFlash}>FLASH SALE</span><span>ราคานี้สิ้นสุดใน</span><Countdown endsAt={p.saleEndsAt} /></div>}
           <span className={css.vat}>ราคารวม VAT 7% แล้ว</span>
           <StockNote n={p.available} />
           <AddToCart sku={p.sku} max={p.available} />
