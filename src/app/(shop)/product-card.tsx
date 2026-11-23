@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { ProductCard as BaseCard } from '@/server/storefront';
 
-type Card = BaseCard & { saleEndsAt?: string | null };
+export type Card = BaseCard & { saleEndsAt?: string | null };
 import { LogoMark } from '@/components/logo';
 import { ProductArt } from './product-art';
 import { baht } from '@/lib/domain';
@@ -50,17 +50,3 @@ export function ProductGrid({ items }: { items: Card[] }) {
   return <div className={css.grid}>{items.map(p => <ProductCard key={p.sku} p={p} />)}</div>;
 }
 
-/** Home-page row: five cards across (three on tablets, two on phones). With more than five the row glides left on a
- *  loop, pausing under the pointer or keyboard focus; the second copy that closes the loop is hidden from screen
- *  readers and the keyboard. With reduced motion it stays still and scrolls by hand. */
-export function ProductRail({ items }: { items: Card[] }) {
-  const moving = items.length > 5;
-  return (
-    <div className={`${css.rail}${moving ? ` ${css.railMoving}` : ''}`} data-rail>
-      <div className={css.railTrack} style={moving ? { ['--rail-dur' as string]: `${items.length * 4}s` } : undefined}>
-        {items.map(p => <div key={p.sku} className={css.railItem}><ProductCard p={p} /></div>)}
-        {moving && items.map(p => <div key={`copy-${p.sku}`} className={`${css.railItem} ${css.railCopy}`} aria-hidden inert><ProductCard p={p} copy /></div>)}
-      </div>
-    </div>
-  );
-}
