@@ -1,7 +1,7 @@
 // Domain constants & pure helpers shared by server and client.
 
 export const MODULES = [
-  ['dashboard', 'แดชบอร์ดภาพรวม'], ['inventory', 'คลังสินค้า'], ['products', 'สินค้า & ราคาขาย'], ['orders', 'คำสั่งซื้อ & จัดส่ง'], ['coupons', 'คูปอง & โปรโมชั่น'], ['warranty', 'ตรวจประกัน & เปลี่ยนสินค้า'], ['claims', 'เคลมสินค้า'], ['customers', 'ลูกค้า'], ['sales', 'รายงานยอดขาย'],
+  ['dashboard', 'แดชบอร์ดภาพรวม'], ['inventory', 'คลังสินค้า'], ['products', 'สินค้า & ราคาขาย'], ['orders', 'คำสั่งซื้อ & จัดส่ง'], ['coupons', 'คูปอง & โปรโมชั่น'], ['warranty', 'ตรวจประกัน & เปลี่ยนสินค้า'], ['claims', 'เคลมสินค้า'], ['chat', 'แชทลูกค้า'], ['customers', 'ลูกค้า'], ['sales', 'รายงานยอดขาย'],
   ['purchase', 'ใบขอซื้อ / ใบสั่งซื้อ'], ['approvals', 'อนุมัติการสั่งซื้อ'],
   ['users', 'บัญชีผู้ใช้ & สิทธิ์'], ['audit', 'Audit Log'],
 ] as const;
@@ -11,13 +11,13 @@ export const ALL: Module[] = MODULES.map(m => m[0]);
 export const isModule = (m: string): m is Module => (ALL as string[]).includes(m);
 
 export const MOD_PATH: Record<Module, string> = {
-  dashboard: '/dashboard', inventory: '/inventory', products: '/products', orders: '/orders', coupons: '/coupons', warranty: '/warranty', claims: '/claims', customers: '/customers', sales: '/sales', purchase: '/purchase', approvals: '/approvals',
+  dashboard: '/dashboard', inventory: '/inventory', products: '/products', orders: '/orders', coupons: '/coupons', warranty: '/warranty', claims: '/claims', chat: '/chat', customers: '/customers', sales: '/sales', purchase: '/purchase', approvals: '/approvals',
   users: '/users', audit: '/audit',
 };
 
 export const HDR: Record<Module, [string, string]> = {
   dashboard: ['ภาพรวมระบบ', 'แดชบอร์ดผู้บริหาร'], inventory: ['Inventory', 'คลังสินค้า & สต็อก'],
-  products: ['Catalog', 'สินค้า & ราคาขาย'], orders: ['Sales', 'คำสั่งซื้อ & การจัดส่ง'], coupons: ['Promotion', 'คูปองส่วนลด & โปรโมชั่นหน้าร้าน'], warranty: ['After-sales', 'ตรวจประกันและเปลี่ยนสินค้าตาม Serial'], claims: ['After-sales', 'เคลมสินค้าจากลูกค้า'], customers: ['CRM', 'บัญชีลูกค้าหน้าร้าน'], sales: ['Sales Report', 'ยอดขาย กำไร และสินค้าขายดี'],
+  products: ['Catalog', 'สินค้า & ราคาขาย'], orders: ['Sales', 'คำสั่งซื้อ & การจัดส่ง'], coupons: ['Promotion', 'คูปองส่วนลด & โปรโมชั่นหน้าร้าน'], warranty: ['After-sales', 'ตรวจประกันและเปลี่ยนสินค้าตาม Serial'], claims: ['After-sales', 'เคลมสินค้าจากลูกค้า'], chat: ['Support', 'แชทกับลูกค้าหน้าร้าน'], customers: ['CRM', 'บัญชีลูกค้าหน้าร้าน'], sales: ['Sales Report', 'ยอดขาย กำไร และสินค้าขายดี'],
   purchase: ['Procurement', 'ใบขอซื้อ & ใบสั่งซื้อ'], approvals: ['Procurement', 'อนุมัติการสั่งซื้อ'],
   users: ['Administration', 'บัญชีผู้ใช้ & สิทธิ์การเข้าถึง'], audit: ['Compliance', 'Audit Log · บันทึกการใช้งานระบบ'],
 };
@@ -33,16 +33,16 @@ export const ROLE_LABEL = Object.fromEntries([...ROLES, ['employee', 'พนั�
 export const isRole = (r: string): r is Role => ROLES.some(x => x[0] === r);
 
 export const ROLE_PERMS: Record<Role, Module[]> = {
-  storekeeper: ['inventory', 'products', 'orders', 'warranty', 'claims', 'purchase'],
+  storekeeper: ['inventory', 'products', 'orders', 'warranty', 'claims', 'chat', 'purchase'],
   itsupport: ['claims', 'warranty', 'inventory'],
   itmanager: ['claims', 'warranty', 'inventory'],
-  manager: ['dashboard', 'sales', 'orders', 'coupons', 'warranty', 'claims', 'customers', 'approvals', 'audit'],
+  manager: ['dashboard', 'sales', 'orders', 'coupons', 'warranty', 'claims', 'chat', 'customers', 'approvals', 'audit'],
   executive: ['dashboard', 'sales', 'approvals', 'audit'],
   admin: ALL,
 };
 
 export const AUDIT_CATS: Record<string, string> = {
-  auth: 'เข้าสู่ระบบ', user: 'ผู้ใช้ & สิทธิ์', ticket: 'งานซ่อม', stock: 'คลังสินค้า', product: 'สินค้า & ราคา', purchase: 'จัดซื้อ', order: 'คำสั่งซื้อ & ชำระเงิน', coupon: 'คูปอง', warranty: 'ประกัน & เคลม', customer: 'ลูกค้า',
+  auth: 'เข้าสู่ระบบ', user: 'ผู้ใช้ & สิทธิ์', ticket: 'งานซ่อม', stock: 'คลังสินค้า', product: 'สินค้า & ราคา', purchase: 'จัดซื้อ', order: 'คำสั่งซื้อ & ชำระเงิน', coupon: 'คูปอง', warranty: 'ประกัน & เคลม', customer: 'ลูกค้า', chat: 'แชทลูกค้า',
   employee: 'พนักงาน', asset: 'ทรัพย์สิน', // older records only: the employee & asset registers were removed
   system: 'ระบบ',
 };

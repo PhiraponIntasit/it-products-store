@@ -28,6 +28,7 @@ model User {
   ticketsOpened   Ticket[]          @relation("TicketRequester")
   ticketsAssigned Ticket[]          @relation("TicketAssignee")
   claimsAssigned  Claim[]           @relation("ClaimAssignee")
+  chatsAssigned   ChatThread[]      @relation("ChatAssignee")
   prsRequested    PurchaseRequest[] @relation("PRRequester")
   prsApproved1    PurchaseRequest[] @relation("PRApprover1")
   prsApproved     PurchaseRequest[] @relation("PRApprover")
@@ -309,6 +310,7 @@ model Customer {
   orders       Order[]
   sessions     CustomerSession[]
   claims       Claim[]
+  chats        ChatThread[]
 }
 
 /// A signed-in customer's browser. Kept apart from staff sessions so a customer cookie can never open the back office.
@@ -606,4 +608,50 @@ model ClaimPart {
   qty     Int
 
   @@id([claimId, sku])
+}
+
+// ── Storefront chat (person A) ──────────────────────────────────────────────
+
+/// One conversation from the storefront chat widget. A signed-in customer is linked by customerId; a visitor by a
+/// cookie (only its sha256 is stored). bot → waiting (needs staff) → open (a staff member took it) → closed.
+model ChatThread {
+  id             String        @id @default(cuid())
+  customerId     String?
+  customer       Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  /// sha256 of the visitor's chat cookie
+  guestToken     String?       @unique
+  /// Name / email a visitor typed in, so staff can address them and reply by email
+  guestName      String        @default("")
+  guestEmail     String        @default("")
+  /// bot | waiting | open | closed
+  status         String        @default("bot")
+  assigneeId     String?
+  assignee       User?         @relation("ChatAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  /// When the customer last had the chat open (polling), and when staff last read it — for unread counts and email
+  customerSeenAt DateTime?
+  staffSeenAt    DateTime?
+  /// Last "staff replied" email, so a burst of replies sends one email
+  emailedAt      DateTime?
+  closedAt       DateTime?
+  messages       ChatMessage[]
+
+  @@index([status, updatedAt])
+  @@index([customerId])
+}
+
+model ChatMessage {
+  id        Int        @id @default(autoincrement())
+  threadId  String
+  thread    ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  /// customer | bot | staff | system
+  role      String
+  text      String
+  /// Staff member who wrote it (name kept even if the account is removed)
+  staffId   String?
+  by        String     @default("")
+  createdAt DateTime   @default(now())
+
+  @@index([threadId, id])
 }
