@@ -129,7 +129,7 @@ export async function livePromotions(now = new Date()) {
     db.promotion.findMany({ where: { kind: 'flash', ...running }, orderBy: { endsAt: 'asc' }, include: { items: { select: { sku: true } } } }),
   ]);
   return {
-    banners: banners.filter(b => b.slot === 'hero').slice(0, 8).map(bannerOf),
+    banners: banners.filter(b => b.slot === 'hero').slice(0, 12).map(bannerOf),
     side: banners.filter(b => b.slot === 'side').map(bannerOf)[0] ?? null,
     flash: flash.length ? { title: flash[0].title, subtitle: flash[0].subtitle, endsAt: flash[0].endsAt.toISOString(), skus: [...new Set(flash.flatMap(f => f.items.map(i => i.sku)))] } : null,
   };
