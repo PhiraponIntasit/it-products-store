@@ -1,16 +1,17 @@
 import { test, expect } from '@playwright/test';
 import { loginAs, USERS } from '../helpers';
 
-// Storefront ↔ back office: a staff sign-in link in the shop footer, a "back to the back office" bar while a staff
-// session is open, "edit in the back office" on a product for people who manage products, and the way back from
+// Storefront ↔ back office: nothing on the shop leads customers to the back office (staff open /login themselves);
+// a "back to the back office" bar while a staff session is open, "edit in the back office" on a product for people who manage products, and the way back from
 // the back office (sidebar, product page). Customers never see the staff bar or the edit link.
 
-test('a visitor sees only the staff sign-in link in the footer', async ({ page }) => {
+test('visitors and customers see no way into the back office', async ({ page }) => {
   await page.goto('/p/cpu-r5-7600');
   await expect(page.getByRole('region', { name: 'แถบพนักงาน' })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: /แก้ไขสินค้านี้ในหลังร้าน/ })).toHaveCount(0);
-  await page.getByRole('contentinfo').getByRole('link', { name: 'ระบบหลังร้านสำหรับพนักงาน' }).click();
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole('link', { name: /แก้ไขสินค้านี้ในหลังร้าน|ระบบหลังร้าน|พนักงาน/ })).toHaveCount(0);
+  expect(await page.locator('a[href="/login"]').count()).toBe(0);
+  await page.goto('/login');                                     // staff still sign in at /login directly
+  await expect(page.locator('#u')).toBeVisible();
 });
 
 test('store keeper: back office → storefront → edit the product → back', async ({ page, context }) => {
