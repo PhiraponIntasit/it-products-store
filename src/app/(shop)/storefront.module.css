@@ -15,6 +15,10 @@
 
 /* — page body & footer — */
 .main { flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: 24px 16px 56px; }
+.staffBar { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; align-items: center; padding: 6px 16px; font-size: 13px; background: var(--color-text); color: var(--color-bg); }
+.staffBar a { color: var(--color-bg); font-weight: 600; }
+.footStaff { max-width: 1200px; margin: 0 auto; padding: 0 16px 20px; font-size: 13px; }
+.footStaff a { color: var(--color-text-2); }
 .foot { border-top: 1px solid var(--color-divider); background: var(--color-surface); }
 .footIn { max-width: 1200px; margin: 0 auto; padding: 24px 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px 32px; font-size: 13px; color: var(--color-text-2); }
 .footIn h2 { font-size: 14px; margin: 0 0 6px; color: var(--color-text); }
