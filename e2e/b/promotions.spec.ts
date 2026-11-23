@@ -128,13 +128,17 @@ test('banner links must stay inside the shop', async ({ page }) => {
 
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC', 'base64');
 
-test('brand tiles lead to that brand; the staff icon leads to the back office', async ({ page }) => {
+test('brand tiles lead to that brand; the staff icon shows only with a back-office session', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('navigation', { name: 'แบรนด์' }).getByRole('link', { name: 'สินค้าแบรนด์ AMD' }).click();
   await expect(page).toHaveURL(/\/shop\?brand=amd$/);
   await expect(page.locator('[data-sku="CPU-R5-7600"]')).toBeVisible();
-  await page.getByRole('navigation', { name: 'เมนูร้าน' }).getByRole('link', { name: 'พนักงาน · ระบบหลังร้าน' }).click();
-  await expect(page).toHaveURL(/\/login$/);
+  const staffIcon = page.getByRole('navigation', { name: 'เมนูร้าน' }).getByRole('link', { name: 'พนักงาน · ระบบหลังร้าน' });
+  await expect(staffIcon).toHaveCount(0);                       // visitors and customers: no way in from the shop
+  await loginAs(page, USERS.storekeeper);
+  await page.goto('/');
+  await staffIcon.click();
+  await expect(page).toHaveURL(/\/inventory$/);                 // straight back to their back-office home
 });
 
 test('a poster uploaded for a banner shows on the home page; a brand logo replaces its wordmark', async ({ page }) => {
