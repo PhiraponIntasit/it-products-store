@@ -7,7 +7,8 @@ import { getCustomer } from './customer-session';
 import { appUrl, sendMail } from './mail';
 import { ORDER_ST } from './orders';
 import { CLAIM_ST, OPEN_CLAIM } from './claims';
-import { MISS, ruleReply } from './assistant';
+import { MISS, ruleReply, type AssistantReply } from './assistant';
+import { claudeEnabled, claudeReply } from './assistant-claude';
 import { baht, fmtDT } from '@/lib/domain';
 
 // Storefront live chat (person A). Signed-in customers only — a visitor is asked to sign in first, so staff always know
@@ -18,6 +19,8 @@ type Staff = Pick<User, 'id' | 'name' | 'role'>;
 
 export const CHAT_MAX_LEN = 1000;
 const RATE_PER_MIN = 12;
+/** With Claude answering, a conversation that goes on this long is handed to staff (keeps cost per chat bounded). */
+const MAX_BOT_TURNS = 40;
 const PAGE = 200;
 /** The customer counts as "away" when their widget hasn't polled for this long — staff replies are then emailed. */
 const AWAY_MS = 2 * 60e3;
@@ -87,16 +90,26 @@ export async function customerSend(textIn: string) {
   return t.id;
 }
 
-/** The assistant answers the customer's latest message; two "didn't understand" in a row hand the chat to staff. */
+/** The assistant answers the customer's latest message: Claude when an API key is set, otherwise (or if Claude fails or
+ *  declines) the rule-based assistant. With the rules, two "didn't understand" in a row hand the chat to staff. */
 async function assistantTurn(threadId: string, customerId: string, text: string) {
-  let r;
-  try { r = await ruleReply(customerId, text); } catch (e) {
-    console.error('assistant failed', e);
-    r = { text: 'ขออภัย ผู้ช่วยอัตโนมัติขัดข้อง ขอส่งต่อให้พนักงานครับ', handoff: true };
+  let r: AssistantReply | null = null;
+  if (claudeEnabled()) {
+    const used = await db.chatMessage.count({ where: { threadId, role: 'bot' } });
+    if (used >= MAX_BOT_TURNS) r = { text: 'คุยกันมาหลายข้อความแล้ว ขอส่งต่อให้พนักงานช่วยดูต่อนะครับ', handoff: true };
+    else {
+      try { r = await claudeReply(threadId, customerId); } catch (e) { console.error('claude assistant failed, using rules', e); }
+    }
   }
-  if (r.miss) {
-    const prev = await db.chatMessage.findFirst({ where: { threadId, role: 'bot' }, orderBy: { id: 'desc' }, select: { text: true } });
-    if (prev?.text.startsWith(MISS)) r = { text: 'ขอโทษครับ ผมยังตอบเรื่องนี้ไม่ได้ ขอส่งต่อให้พนักงานช่วยดูนะครับ', handoff: true };
+  if (!r) {
+    try { r = await ruleReply(customerId, text); } catch (e) {
+      console.error('assistant failed', e);
+      r = { text: 'ขออภัย ผู้ช่วยอัตโนมัติขัดข้อง ขอส่งต่อให้พนักงานครับ', handoff: true };
+    }
+    if (r.miss) {
+      const prev = await db.chatMessage.findFirst({ where: { threadId, role: 'bot' }, orderBy: { id: 'desc' }, select: { text: true } });
+      if (prev?.text.startsWith(MISS)) r = { text: 'ขอโทษครับ ผมยังตอบเรื่องนี้ไม่ได้ ขอส่งต่อให้พนักงานช่วยดูนะครับ', handoff: true };
+    }
   }
   await db.chatMessage.create({ data: { threadId, role: 'bot', text: r.text, by: 'ผู้ช่วยอัตโนมัติ' } });
   if (r.handoff) await handOff(threadId);
