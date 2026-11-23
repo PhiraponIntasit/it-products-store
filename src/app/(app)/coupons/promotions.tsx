@@ -31,7 +31,7 @@ export function PromotionsView({ rows, products, now }: { rows: PromotionRow[]; 
             {rows.map(p => (
               <tr key={p.id} data-promo={p.title}>
                 <td><strong>{p.title}</strong>{p.subtitle && <div className="muted" style={{ fontSize: 12 }}>{p.subtitle}</div>}</td>
-                <td>{p.kind === 'flash' ? 'Flash sale' : 'แบนเนอร์'}</td>
+                <td>{p.kind === 'flash' ? 'Flash sale' : p.slot === 'side' ? 'แบนเนอร์ข้าง' : 'แบนเนอร์หลัก'}</td>
                 <td className="tnum nw" style={{ fontSize: 13 }}>{p.periodText}</td>
                 <td style={{ fontSize: 13 }}>
                   {p.kind === 'flash' ? p.items.map(i => (
@@ -56,7 +56,7 @@ export function PromotionsView({ rows, products, now }: { rows: PromotionRow[]; 
 }
 
 function PromoDialog({ row, kind, products, now, onClose }: { row: PromotionRow | null; kind: string; products: Product[]; now: string; onClose: () => void }) {
-  const [f, setF] = useState<Record<string, string>>(row?.form ?? { kind, title: '', subtitle: '', link: '', tone: 'cobalt', sort: '0', startsAt: now, endsAt: now });
+  const [f, setF] = useState<Record<string, string>>(row?.form ?? { kind, title: '', subtitle: '', link: '', tone: 'cobalt', slot: 'hero', sort: '0', startsAt: now, endsAt: now });
   const [items, setItems] = useState<{ sku: string; sale: string }[]>(row?.items.map(i => ({ sku: i.sku, sale: String(i.sale) })) ?? []);
   const [pick, setPick] = useState('');
   const { run, pending, error } = useAction();
@@ -75,6 +75,11 @@ function PromoDialog({ row, kind, products, now, onClose }: { row: PromotionRow 
         {inp('endsAt', 'สิ้นสุด', { type: 'datetime-local' })}
         {!flash && <>
           {inp('link', 'ลิงก์เมื่อกด (หน้าในร้าน)', { placeholder: '/shop?cat=gpu', maxLength: 200 })}
+          <div className="field"><label htmlFor="pm-slot">ตำแหน่ง</label>
+            <select id="pm-slot" className="input" value={f.slot ?? 'hero'} onChange={set('slot')}>
+              <option value="hero">แบนเนอร์หลัก (แนวนอน เลื่อนสลับกัน)</option>
+              <option value="side">แบนเนอร์ข้าง (แนวตั้ง ข้างแบนเนอร์หลัก)</option>
+            </select></div>
           <div className="field"><label htmlFor="pm-tone">สีแบนเนอร์</label>
             <select id="pm-tone" className="input" value={f.tone} onChange={set('tone')}>{TONES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
           {inp('sort', 'ลำดับ (น้อยขึ้นก่อน)', { type: 'number', min: 0, max: 99 })}

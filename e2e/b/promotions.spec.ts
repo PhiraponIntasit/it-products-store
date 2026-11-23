@@ -157,12 +157,27 @@ test('a poster uploaded for a banner shows on the home page; a brand logo replac
 
   await loginAs(page, USERS.storekeeper);
   await page.goto('/products/catalog');
-  await page.getByLabel('โลโก้ Zotac').setInputFiles({ name: 'zotac.png', mimeType: 'image/png', buffer: PNG });
-  await expect(page.getByRole('img', { name: 'โลโก้ Zotac' })).toBeVisible();
+  await page.getByLabel('โลโก้ TeamGroup').setInputFiles({ name: 'teamgroup.png', mimeType: 'image/png', buffer: PNG });
+  await expect(page.getByRole('img', { name: 'โลโก้ TeamGroup' })).toBeVisible();
   await page.goto('/');
-  await expect(page.getByRole('link', { name: 'สินค้าแบรนด์ Zotac' }).locator('img')).toHaveCount(1);
+  await expect(page.getByRole('link', { name: 'สินค้าแบรนด์ TeamGroup' }).locator('img')).toHaveCount(1);
   // put it back as it was
   await page.goto('/products/catalog');
-  await page.getByRole('button', { name: 'ลบโลโก้ Zotac' }).click();
-  await expect(page.getByRole('img', { name: 'โลโก้ Zotac' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'ลบโลโก้ TeamGroup' }).click();
+  await expect(page.getByRole('img', { name: 'โลโก้ TeamGroup' })).toHaveCount(0);
+});
+
+test('seeded posters and logos: a tall side poster beside the slides, brand logos that lead to the brand', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  const side = page.getByRole('link', { name: 'ประกอบคอมเองง่าย ระบบเช็คความเข้ากันให้' });
+  await expect(side.locator('img')).toHaveCount(1);
+  const slides = page.getByRole('region', { name: 'โปรโมชั่น' });
+  await expect(slides.locator('img[alt="การ์ดจอรุ่นใหม่ RTX 50 Series"]')).toHaveCount(1);
+  await expect(page.getByRole('link', { name: 'สินค้าแบรนด์ MSI' }).locator('img')).toHaveCount(1);
+  await side.click();
+  await expect(page).toHaveURL(/\/build$/);
+  await page.goto('/');
+  await page.getByRole('link', { name: 'สินค้าแบรนด์ MSI' }).click();
+  await expect(page).toHaveURL(/\/shop\?brand=msi$/);
 });

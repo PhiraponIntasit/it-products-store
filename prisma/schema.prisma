@@ -505,6 +505,8 @@ model Promotion {
   tone      String          @default("cobalt")
   /// Banner poster uploaded by the shop (file name in the upload store); without one a designed poster is drawn
   image     String?
+  /// Where a banner shows: hero (the sliding wide posters) | side (one tall poster beside them)
+  slot      String          @default("hero")
   startsAt  DateTime
   endsAt    DateTime
   active    Boolean         @default(true)
