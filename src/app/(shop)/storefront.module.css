@@ -308,7 +308,7 @@
 .brands img { max-width: 100%; max-height: 40px; object-fit: contain; }
 
 .pic { position: relative; }
-.picPhoto { background-size: cover; }   /* photos fill the card; drawn illustrations stay whole */
+.picPhoto { background-size: contain; background-color: #fff; }   /* show the whole photo (most are shot on white); drawn illustrations keep their own frame */
 .flags { position: absolute; left: 8px; top: 8px; display: flex; gap: 4px; flex-wrap: wrap; }
 .flagFlash, .flagOff { font-variant-numeric: tabular-nums; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #fff; }
 .flagFlash { background: #b91c1c; }
