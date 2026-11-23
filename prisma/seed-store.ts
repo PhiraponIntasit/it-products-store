@@ -2,7 +2,7 @@
 // filters and the PC builder read. Prices are demo figures (THB, VAT included), not quotes.
 import type { Prisma, PrismaClient } from '@prisma/client';
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 
@@ -210,6 +210,13 @@ export async function seedPromotions(db: PrismaClient) {
   ] });
   await db.coupon.updateMany({ where: { code: { in: ['WELCOME10', 'SAVE300'] } }, data: { showOnShop: true } });
 
+  // Product photos from the team (prisma/seed-assets/products/<SKU>.jpg); the rest keep the drawn illustration
+  for (const f of await readdir(path.join(ASSETS, 'products'))) {
+    const sku = f.replace(/\.(jpg|png)$/, '');
+    if (await db.inventoryItem.findUnique({ where: { sku }, select: { sku: true } }))
+      await db.productImage.create({ data: { sku, file: await storeAsset(`products/${f}`), ord: 0 } });
+  }
+
   // Brand logos (prisma/seed-assets/brands/<brand slug>.png, cut from the team's logo sheet)
   for (const b of await db.brand.findMany()) {
     if (existsSync(path.join(ASSETS, 'brands', `${b.slug}.png`))) await db.brand.update({ where: { id: b.id }, data: { logo: await storeAsset(`brands/${b.slug}.png`) } });
@@ -221,10 +228,11 @@ export async function seedPromotions(db: PrismaClient) {
 const ASSETS = path.resolve(__dirname, 'seed-assets');
 async function storeAsset(rel: string) {
   const buf = await readFile(path.join(ASSETS, rel));
-  const file = `${randomBytes(16).toString('hex')}.png`;
+  const ext = rel.endsWith('.jpg') ? 'jpg' : 'png', type = ext === 'jpg' ? 'image/jpeg' : 'image/png';
+  const file = `${randomBytes(16).toString('hex')}.${ext}`;
   if (process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN) {
     const { put } = await import('@vercel/blob');
-    await put(`tickets/${file}`, buf, { access: 'private', contentType: 'image/png', addRandomSuffix: false });
+    await put(`tickets/${file}`, buf, { access: 'private', contentType: type, addRandomSuffix: false });
   } else {
     const dir = path.resolve(process.env.UPLOAD_DIR || './storage/uploads');
     await mkdir(dir, { recursive: true });

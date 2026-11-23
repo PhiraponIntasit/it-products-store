@@ -24,7 +24,7 @@ const off = (p: Card) => (p.compareAt != null && p.compareAt > p.price ? Math.ro
 export function ProductCard({ p }: { p: Card }) {
   return (
     <Link href={`/p/${p.slug}`} className={css.card} data-sku={p.sku}>
-      <div className={css.pic} style={p.image ? { backgroundImage: `url(${p.image})` } : undefined}>
+      <div className={`${css.pic}${p.image ? ` ${css.picPhoto}` : ''}`} style={p.image ? { backgroundImage: `url(${p.image})` } : undefined}>
         {!p.image && <ProductArt cat={p.categorySlug} brand={p.brand} label={`ภาพประกอบ ${p.name}`} />}
         {(p.saleEndsAt || off(p) > 0) && (
           <span className={css.flags}>
