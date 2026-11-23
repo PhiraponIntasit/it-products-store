@@ -1,0 +1,38 @@
+import { test, expect } from '@playwright/test';
+import { loginAs, USERS } from '../helpers';
+
+// Storefront ↔ back office: a staff sign-in link in the shop footer, a "back to the back office" bar while a staff
+// session is open, "edit in the back office" on a product for people who manage products, and the way back from
+// the back office (sidebar, product page). Customers never see the staff bar or the edit link.
+
+test('a visitor sees only the staff sign-in link in the footer', async ({ page }) => {
+  await page.goto('/p/cpu-r5-7600');
+  await expect(page.getByRole('region', { name: 'แถบพนักงาน' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /แก้ไขสินค้านี้ในหลังร้าน/ })).toHaveCount(0);
+  await page.getByRole('contentinfo').getByRole('link', { name: 'ระบบหลังร้านสำหรับพนักงาน' }).click();
+  await expect(page).toHaveURL(/\/login$/);
+});
+
+test('store keeper: back office → storefront → edit the product → back', async ({ page, context }) => {
+  await loginAs(page, USERS.storekeeper);
+  await page.goto('/products/CPU-R5-7600');
+  const [shop] = await Promise.all([context.waitForEvent('page'), page.getByRole('link', { name: 'ดูหน้าสินค้าบนหน้าร้าน ↗' }).click()]);
+  await shop.waitForLoadState();
+  await expect(shop).toHaveURL(/\/p\/cpu-r5-7600$/);
+  await expect(shop.getByRole('region', { name: 'แถบพนักงาน' })).toContainText('วิภาดา รุ่งเรือง');
+  await shop.getByRole('link', { name: /แก้ไขสินค้านี้ในหลังร้าน/ }).click();
+  await expect(shop).toHaveURL(/\/products\/CPU-R5-7600$/);
+  await shop.goto('/');
+  await shop.getByRole('region', { name: 'แถบพนักงาน' }).getByRole('link', { name: 'กลับไปหลังร้าน ›' }).click();
+  await expect(shop).toHaveURL(/\/inventory$/);   // the store keeper's home
+  await expect(page.getByRole('link', { name: 'เปิดหน้าร้าน ↗' })).toHaveAttribute('href', '/');
+});
+
+test('staff without the products menu get the bar but no edit link', async ({ page }) => {
+  await loginAs(page, USERS.manager);
+  await page.goto('/p/cpu-r5-7600');
+  await page.getByRole('region', { name: 'แถบพนักงาน' }).getByRole('link', { name: 'กลับไปหลังร้าน ›' }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await page.goto('/p/cpu-r5-7600');
+  await expect(page.getByRole('link', { name: /แก้ไขสินค้านี้ในหลังร้าน/ })).toHaveCount(0);
+});

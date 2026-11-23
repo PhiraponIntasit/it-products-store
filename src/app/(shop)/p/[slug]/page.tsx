@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { productBySlug } from '@/server/storefront';
+import { can, getUser } from '@/server/auth';
 import { baht } from '@/lib/domain';
 import { ProductGrid, StockNote } from '../../product-card';
 import { Gallery } from './gallery';
@@ -16,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ProductPage({ params }: Props) {
-  const p = await productBySlug((await params).slug);
+  const [p, staff] = await Promise.all([productBySlug((await params).slug), getUser()]);
   if (!p) notFound();
   const off = p.compareAt != null && p.compareAt > p.price ? p.compareAt - p.price : 0;
   return (
@@ -32,6 +33,7 @@ export default async function ProductPage({ params }: Props) {
         <div className={css.buy}>
           {p.brand && <Link href={`/shop?brand=${p.brand.slug}`} className="kicker">{p.brand.name}</Link>}
           <h1>{p.name}</h1>
+          {can(staff, 'products') && <Link href={`/products/${encodeURIComponent(p.sku)}`} style={{ fontSize: 13 }}>แก้ไขสินค้านี้ในหลังร้าน (ราคา สต็อก รูป) ›</Link>}
           <div className={css.priceRow}>
             <span className={`${css.bigPrice} tnum`}>{baht(p.price)}</span>
             {off > 0 && <><span className={`${css.was} tnum`}>{baht(p.compareAt!)}</span><span className="tag tag-accent tnum">ลด {baht(off)}</span></>}
