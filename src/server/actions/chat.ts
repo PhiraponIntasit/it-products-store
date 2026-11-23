@@ -4,7 +4,7 @@ import { Denied, requireAction } from '../auth';
 import { closeChat, customerAskStaff, customerClose, customerSend, staffReply, takeChat } from '../chat';
 import type { Result } from '@/lib/result';
 
-// Chat actions. Customer actions work for signed-in customers and cookie visitors alike; staff actions need the chat menu.
+// Chat actions. Customer actions need a signed-in customer; staff actions need the chat menu.
 // New messages are fetched by polling GET /api/chat (customer) and /api/chat/[id] (staff), so sending doesn't refresh the page.
 
 async function quiet(fn: () => Promise<unknown>): Promise<Result> {
@@ -15,8 +15,8 @@ async function quiet(fn: () => Promise<unknown>): Promise<Result> {
   }
 }
 
-export async function chatSend(text: string, contact?: { name: string; email: string }) {
-  return quiet(() => customerSend(str(text), contact ? { name: str(contact.name), email: str(contact.email) } : undefined));
+export async function chatSend(text: string) {
+  return quiet(() => customerSend(str(text)));
 }
 
 export async function chatAskStaff() {

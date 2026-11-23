@@ -31,7 +31,10 @@
 .text { white-space: pre-wrap; overflow-wrap: anywhere; }
 .time { align-self: flex-end; font-size: 11px; color: var(--color-text-2); }
 
-.contact { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px 0; }
+.gate { padding: 12px 14px 16px; border-top: 1px solid var(--color-divider); display: flex; flex-direction: column; gap: 10px; }
+.gate p { margin: 0; font-size: 14px; line-height: 1.6; }
+.gateBtns { display: flex; gap: 8px; }
+.gateBtns > :global(.btn) { flex: 1; justify-content: center; }
 .err { margin: 6px 12px 0; font-size: 13px; font-weight: 500; color: var(--color-danger); }
 .compose { display: flex; gap: 8px; align-items: flex-end; padding: 10px 12px 12px; }
 .compose textarea { flex: 1; min-width: 0; resize: none; font-size: 15px; }
@@ -41,5 +44,5 @@
   .fabText { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .panel { inset: 0; width: 100%; height: 100dvh; border-radius: 0; border: 0; }
   /* 16px keeps iOS Safari from zooming into the fields */
-  .compose textarea, .contact :global(.input) { font-size: 16px; }
+  .compose textarea { font-size: 16px; }
 }

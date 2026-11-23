@@ -54,7 +54,7 @@ export function StaffChatView({ initial, meId }: { initial: StaffChat; meId: str
       <header style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '12px 16px', borderBottom: '1px solid var(--color-divider)' }}>
         <strong>{t.name}</strong>
         <span className={`tag ${t.statusTag}`} data-testid="chat-state">{t.statusLabel}</span>
-        <span className="muted" style={{ fontSize: 13 }}>{t.customerOnline ? '● ลูกค้าเปิดหน้าแชทอยู่' : 'ลูกค้าไม่ได้เปิดหน้าแชท — ข้อความจะส่งทางอีเมลด้วย (ถ้ามี)'}</span>
+        <span className="muted" style={{ fontSize: 13 }}>{t.customerOnline ? '● ลูกค้าเปิดหน้าแชทอยู่' : 'ลูกค้าไม่ได้เปิดหน้าแชท — คำตอบจะส่งทางอีเมลด้วย'}</span>
         <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
           {!closed && !mine && <button className="btn btn-secondary" disabled={act.pending} onClick={() => act.run(() => staffTake(t.id), poll)}>{t.assignee ? `รับต่อจาก ${t.assignee}` : 'รับเรื่อง'}</button>}
           {!closed && <button className="btn btn-secondary" disabled={act.pending} onClick={() => { if (confirm('ปิดบทสนทนานี้?')) act.run(() => staffClose(t.id), poll); }}>ปิดแชท</button>}

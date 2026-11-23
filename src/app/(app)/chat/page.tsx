@@ -27,7 +27,6 @@ export default async function ChatInboxPage({ searchParams }: { searchParams: Pr
               <tr key={r.id} data-chat={r.id}>
                 <td className="nw">
                   <Link href={`/chat/${r.id}`} style={{ fontWeight: 600 }}>{r.name}</Link>
-                  {r.guest && <span className="tag tag-outline" style={{ marginLeft: 6 }}>ผู้เยี่ยมชม</span>}
                   {r.unread > 0 && <span className="tag tag-accent tnum" style={{ marginLeft: 6 }} aria-label={`ยังไม่อ่าน ${r.unread} ข้อความ`}>ใหม่ {r.unread}</span>}
                 </td>
                 <td style={{ fontSize: 13, maxWidth: 420, overflowWrap: 'anywhere' }}>{r.preview}</td>
