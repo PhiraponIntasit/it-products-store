@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { homeData } from '@/server/storefront';
 import { FREE_SHIPPING_MIN } from '@/lib/shipping';
-import { ProductGrid } from './product-card';
+import { ProductRail } from './product-card';
 import { BannerCarousel, Countdown, CouponCard } from './home-widgets';
 import { accentOf } from './product-art';
 import css from './storefront.module.css';
@@ -82,7 +82,7 @@ export default async function HomePage() {
             </div>
             <div className={css.flashTimer}><span>สิ้นสุดใน</span><Countdown endsAt={d.flash.endsAt} /></div>
           </div>
-          <ProductGrid items={d.flash.items} />
+          <ProductRail items={d.flash.items} />
         </section>
       )}
 
@@ -93,23 +93,23 @@ export default async function HomePage() {
 
       {d.best.length > 0 && <>
         <div className={css.secHead}><h2>สินค้าขายดี 30 วัน</h2><Link href="/shop">ดูทั้งหมด</Link></div>
-        <ProductGrid items={d.best} />
+        <ProductRail items={d.best} />
       </>}
 
       {d.deals.length > 0 && <>
         <div className={css.secHead}><h2>ราคาพิเศษ</h2></div>
-        <ProductGrid items={d.deals} />
+        <ProductRail items={d.deals} />
       </>}
 
       {d.rows.map(r => (
         <section key={r.slug} aria-labelledby={`row-${r.slug}`}>
           <div className={css.secHead}><h2 id={`row-${r.slug}`}>{r.name}</h2><Link href={`/shop?cat=${r.slug}`}>ดูทั้งหมด</Link></div>
-          <ProductGrid items={r.items} />
+          <ProductRail items={r.items} />
         </section>
       ))}
 
       <div className={css.secHead}><h2>สินค้ามาใหม่</h2><Link href="/shop?sort=new">ดูทั้งหมด</Link></div>
-      {d.newest.length ? <ProductGrid items={d.newest} /> : <div className="empty">ยังไม่มีสินค้าขึ้นหน้าร้าน</div>}
+      {d.newest.length ? <ProductRail items={d.newest} /> : <div className="empty">ยังไม่มีสินค้าขึ้นหน้าร้าน</div>}
 
 
     </div>

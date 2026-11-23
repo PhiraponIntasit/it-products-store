@@ -103,7 +103,7 @@ export async function homeData() {
   const [flashRows, bestRows, rowItems] = await Promise.all([
     live.flash ? db.inventoryItem.findMany({ where: { active: true, sku: { in: live.flash.skus } }, include: cardInclude }) : [],
     db.inventoryItem.findMany({ where: { active: true, sku: { in: top.map(t => t.sku) } }, include: cardInclude }),
-    Promise.all(ROW_CATS.map(slug => db.inventoryItem.findMany({ where: { active: true, category: { slug } }, include: cardInclude, orderBy: [{ price: 'asc' }, { sku: 'asc' }], take: 4 }))),
+    Promise.all(ROW_CATS.map(slug => db.inventoryItem.findMany({ where: { active: true, category: { slug } }, include: cardInclude, orderBy: [{ price: 'asc' }, { sku: 'asc' }], take: 10 }))),
   ]);
   const order = new Map(top.map((t, k) => [t.sku, k]));
   const flash = live.flash ? (await withSales(flashRows.map(cardOf), now)).filter(c => c.saleEndsAt) : [];
