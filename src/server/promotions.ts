@@ -40,6 +40,7 @@ export async function savePromotion(me: Staff, id: string | null, f: Record<stri
   const startsAt = at(f.startsAt, 'วันเวลาเริ่ม'), endsAt = at(f.endsAt, 'วันเวลาสิ้นสุด');
   if (endsAt <= startsAt) throw new Fail('เวลาสิ้นสุดต้องหลังเวลาเริ่ม');
   const tone = TONE_KEYS.includes(f.tone) ? f.tone : 'cobalt';
+  const slot = kind === 'banner' && f.slot === 'side' ? 'side' : 'hero';
   const sort = Math.max(0, Math.min(99, parseInt(f.sort || '0', 10) || 0));
   const link = safeLink(f.link);
 
@@ -55,7 +56,7 @@ export async function savePromotion(me: Staff, id: string | null, f: Record<stri
     return { sku, salePrice: Math.round(sale * 100) / 100 };
   }) : [];
 
-  const data = { kind, title, subtitle, link, tone, startsAt, endsAt, sort };
+  const data = { kind, title, subtitle, link, tone, slot, startsAt, endsAt, sort };
   const detail = `${kind === 'flash' ? `Flash sale ${items.length} รายการ` : 'แบนเนอร์'} · ${localInput(startsAt).replace('T', ' ')} ถึง ${localInput(endsAt).replace('T', ' ')}`;
   return db.$transaction(async tx => {
     let pid = id;
@@ -102,7 +103,8 @@ export async function promotionRows() {
         const price = num(i.item.price), sale = num(i.salePrice), cost = num(i.item.cost);
         return { sku: i.sku, name: i.item.name, price, sale, off: Math.round((1 - sale / price) * 100), margin: sale / 1.07 - cost };
       }),
-      form: { kind: p.kind, title: p.title, subtitle: p.subtitle, link: p.link, tone: p.tone, sort: String(p.sort), startsAt: localInput(p.startsAt), endsAt: localInput(p.endsAt) },
+      slot: p.slot,
+      form: { kind: p.kind, title: p.title, subtitle: p.subtitle, link: p.link, tone: p.tone, slot: p.slot, sort: String(p.sort), startsAt: localInput(p.startsAt), endsAt: localInput(p.endsAt) },
     };
   });
 }
@@ -116,15 +118,19 @@ export async function promoProducts() {
 
 // ── storefront ──
 
-/** Running banners and the running flash sale(s) for the home page. */
+type BannerRow = { id: string; title: string; subtitle: string; link: string; tone: string; image: string | null };
+const bannerOf = (b: BannerRow) => ({ id: b.id, title: b.title, subtitle: b.subtitle, link: b.link || '/shop', tone: b.tone, image: b.image ? `/api/promotions/${b.id}/image?v=${b.image.slice(0, 8)}` : null });
+
+/** Running banners (wide ones that slide, and one tall side poster) and the running flash sale(s) for the home page. */
 export async function livePromotions(now = new Date()) {
   const running = { active: true, startsAt: { lte: now }, endsAt: { gt: now } };
   const [banners, flash] = await Promise.all([
-    db.promotion.findMany({ where: { kind: 'banner', ...running }, orderBy: [{ sort: 'asc' }, { endsAt: 'asc' }], take: 6 }),
+    db.promotion.findMany({ where: { kind: 'banner', ...running }, orderBy: [{ sort: 'asc' }, { endsAt: 'asc' }], take: 12 }),
     db.promotion.findMany({ where: { kind: 'flash', ...running }, orderBy: { endsAt: 'asc' }, include: { items: { select: { sku: true } } } }),
   ]);
   return {
-    banners: banners.map(b => ({ id: b.id, title: b.title, subtitle: b.subtitle, link: b.link || '/shop', tone: b.tone, image: b.image ? `/api/promotions/${b.id}/image?v=${b.image.slice(0, 8)}` : null })),
+    banners: banners.filter(b => b.slot === 'hero').slice(0, 8).map(bannerOf),
+    side: banners.filter(b => b.slot === 'side').map(bannerOf)[0] ?? null,
     flash: flash.length ? { title: flash[0].title, subtitle: flash[0].subtitle, endsAt: flash[0].endsAt.toISOString(), skus: [...new Set(flash.flatMap(f => f.items.map(i => i.sku)))] } : null,
   };
 }

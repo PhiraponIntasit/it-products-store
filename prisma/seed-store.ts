@@ -1,6 +1,10 @@
 // Storefront sample data: categories, brands, suppliers and PC parts with the specs the
 // filters and the PC builder read. Prices are demo figures (THB, VAT included), not quotes.
 import type { Prisma, PrismaClient } from '@prisma/client';
+import { existsSync } from 'node:fs';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { randomBytes } from 'node:crypto';
 
 type Specs = Prisma.InputJsonObject;
 
@@ -200,9 +204,31 @@ export async function seedPromotions(db: PrismaClient) {
     ] },
   } });
   await db.promotion.createMany({ data: [
-    { kind: 'banner', title: 'ประกอบคอมเองง่าย ระบบเช็คความเข้ากันให้', subtitle: 'เลือกทีละชิ้น ระบบเตือนทันทีถ้า Socket แรม หรือขนาดเคสไม่ตรง', link: '/build', tone: 'cobalt', sort: 0, startsAt: new Date(now - 30 * 24 * h), endsAt: new Date(now + 60 * 24 * h) },
-    { kind: 'banner', title: 'การ์ดจอรุ่นใหม่ RTX 50 Series', subtitle: 'พร้อมส่ง รับประกัน 3 ปี เคลมออนไลน์ได้ที่บัญชีของคุณ', link: '/shop?cat=vga', tone: 'slate', sort: 1, startsAt: new Date(now - 7 * 24 * h), endsAt: new Date(now + 30 * 24 * h) },
-    { kind: 'banner', title: 'ลูกค้าใหม่ลด 10% ใส่โค้ด WELCOME10', subtitle: 'ลดสูงสุด ฿500 ใช้ได้คนละครั้ง', link: '/shop', tone: 'teal', sort: 2, startsAt: new Date(now - 30 * 24 * h), endsAt: new Date(now + 90 * 24 * h) },
+    { kind: 'banner', slot: 'side', image: await storeAsset('banners/build.png'), title: 'ประกอบคอมเองง่าย ระบบเช็คความเข้ากันให้', subtitle: 'เลือกทีละชิ้น ระบบเตือนทันทีถ้า Socket แรม หรือขนาดเคสไม่ตรง', link: '/build', tone: 'cobalt', sort: 0, startsAt: new Date(now - 30 * 24 * h), endsAt: new Date(now + 60 * 24 * h) },
+    { kind: 'banner', image: await storeAsset('banners/rtx50.png'), title: 'การ์ดจอรุ่นใหม่ RTX 50 Series', subtitle: 'พร้อมส่ง รับประกัน 3 ปี เคลมออนไลน์ได้ที่บัญชีของคุณ', link: '/shop?cat=vga', tone: 'slate', sort: 1, startsAt: new Date(now - 7 * 24 * h), endsAt: new Date(now + 30 * 24 * h) },
+    { kind: 'banner', image: await storeAsset('banners/welcome10.png'), title: 'ลูกค้าใหม่ลด 10% ใส่โค้ด WELCOME10', subtitle: 'ลดสูงสุด ฿500 ใช้ได้คนละครั้ง', link: '/shop', tone: 'teal', sort: 2, startsAt: new Date(now - 30 * 24 * h), endsAt: new Date(now + 90 * 24 * h) },
   ] });
   await db.coupon.updateMany({ where: { code: { in: ['WELCOME10', 'SAVE300'] } }, data: { showOnShop: true } });
+
+  // Brand logos (prisma/seed-assets/brands/<brand slug>.png, cut from the team's logo sheet)
+  for (const b of await db.brand.findMany()) {
+    if (existsSync(path.join(ASSETS, 'brands', `${b.slug}.png`))) await db.brand.update({ where: { id: b.id }, data: { logo: await storeAsset(`brands/${b.slug}.png`) } });
+  }
+}
+
+/** Puts a seed image where uploaded photos live (Vercel Blob when connected, else UPLOAD_DIR), under a random name the
+ *  app accepts (src/server/uploads.ts), and returns that name. */
+const ASSETS = path.resolve(__dirname, 'seed-assets');
+async function storeAsset(rel: string) {
+  const buf = await readFile(path.join(ASSETS, rel));
+  const file = `${randomBytes(16).toString('hex')}.png`;
+  if (process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN) {
+    const { put } = await import('@vercel/blob');
+    await put(`tickets/${file}`, buf, { access: 'private', contentType: 'image/png', addRandomSuffix: false });
+  } else {
+    const dir = path.resolve(process.env.UPLOAD_DIR || './storage/uploads');
+    await mkdir(dir, { recursive: true });
+    await writeFile(path.join(dir, file), buf);
+  }
+  return file;
 }

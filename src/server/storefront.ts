@@ -110,6 +110,7 @@ export async function homeData() {
   return {
     categories: cats.filter(c => c._count.items > 0).map(c => ({ slug: c.slug, name: c.name, count: c._count.items })),
     banners: live.banners,
+    side: live.side,
     flash: live.flash && flash.length ? { title: live.flash.title, subtitle: live.flash.subtitle, endsAt: live.flash.endsAt, items: flash.sort((x, y) => (y.compareAt ?? 0) - y.price - ((x.compareAt ?? 0) - x.price)) } : null,
     coupons: coupons.filter(c => c.usageLimit == null || c.used < c.usageLimit).map(c => ({ code: c.code, text: describe(ruleOf(c)), oncePerCustomer: c.oncePerCustomer, endsAt: c.endsAt.toISOString() })),
     best: (await withSales(bestRows.map(cardOf), now)).sort((x, y) => order.get(x.sku)! - order.get(y.sku)!).slice(0, 8),

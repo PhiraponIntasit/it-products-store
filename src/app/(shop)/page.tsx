@@ -15,12 +15,21 @@ export default async function HomePage() {
   return (
     <div className="anim-page">
       <h1 className="sr-only">COREPICK ร้านอุปกรณ์คอมพิวเตอร์</h1>
-      {d.banners.length ? <BannerCarousel banners={d.banners} /> : (
+      <div className={d.side ? css.heroWithSide : undefined}>
+        {d.banners.length ? <BannerCarousel banners={d.banners} /> : (
           <section className={`${css.banner} ${css.toneCobalt}`} aria-label="ร้าน" style={{ borderRadius: 'var(--radius-lg)' }}>
             <strong className={css.bannerTitle}>อุปกรณ์คอมพิวเตอร์ของแท้ เลือกง่าย ส่งไว</strong>
             <span className={css.bannerSub}>สเปคครบทุกชิ้น ดูจำนวนคงเหลือได้ทันที ชำระด้วย PromptPay QR</span>
           </section>
         )}
+        {d.side && (
+          <Link href={d.side.link} className={`${css.sideBanner} ${d.side.image ? '' : css.toneSlate}`} aria-label={d.side.title}>
+            {d.side.image ? <img src={d.side.image} alt={d.side.title} /> : <span className={css.bannerText} style={{ maxWidth: 'none' }}>
+              <span className={css.bannerKicker}>โปรโมชั่น</span><strong className={css.bannerTitle} style={{ fontSize: 24 }}>{d.side.title}</strong>
+              {d.side.subtitle && <span className={css.bannerSub}>{d.side.subtitle}</span>}<span className={css.bannerCta}>ดูเลย ›</span></span>}
+          </Link>
+        )}
+      </div>
       <div className={css.promoTiles}>
           <Link href="/build" className={css.sideCard}>
             <strong>จัดสเปคคอมเอง</strong>
@@ -45,7 +54,7 @@ export default async function HomePage() {
           <nav className={css.brands} aria-label="แบรนด์">
             {d.brands.map(b => (
               <Link key={b.slug} href={`/shop?brand=${b.slug}`} aria-label={`สินค้าแบรนด์ ${b.name}`} style={{ ['--brand' as string]: accentOf(b.name) }}>
-                {b.logo ? <img src={b.logo} alt="" /> : <span className={css.wordmark}>{b.name}</span>}
+                {b.logo ? <img src={b.logo} alt="" className={css.brandLogo} /> : <span className={css.wordmark}>{b.name}</span>}
               </Link>
             ))}
           </nav>
