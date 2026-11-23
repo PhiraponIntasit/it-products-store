@@ -198,17 +198,18 @@ export async function seedPromotions(db: PrismaClient) {
   await db.promotion.create({ data: {
     kind: 'flash', title: 'Flash Sale ปลายเดือน', subtitle: 'ลดแรงเฉพาะช่วงนี้ หมดเวลากลับเป็นราคาปกติ', startsAt: new Date(now - 6 * h), endsAt: new Date(now + 62 * h),
     items: { create: [
-      { sku: 'CPU-R5-7500F', salePrice: 4790 }, { sku: 'VGA-MSI-5070', salePrice: 20490 }, { sku: 'RAM-TG-32D5', salePrice: 3790 },
-      { sku: 'SSD-KS-NV3', salePrice: 1890 }, { sku: 'MON-AOC-24G2', salePrice: 3990 }, { sku: 'MOU-LG-G502X', salePrice: 3590 },
+      { sku: 'CPU-R5-7500F', salePrice: 5030 }, { sku: 'VGA-MSI-5070', salePrice: 20490 }, { sku: 'RAM-TG-32D5', salePrice: 3790 },
+      { sku: 'SSD-KS-NV3', salePrice: 1970 }, { sku: 'MON-AOC-24G2', salePrice: 4120 }, { sku: 'MOU-LG-G502X', salePrice: 3590 },
       { sku: 'COOL-DC-AG400', salePrice: 590 }, { sku: 'PSU-MSI-A650', salePrice: 1590 },
     ] },
   } });
   await db.promotion.createMany({ data: [
-    { kind: 'banner', slot: 'side', image: await storeAsset('banners/build.png'), title: 'ประกอบคอมเองง่าย ระบบเช็คความเข้ากันให้', subtitle: 'เลือกทีละชิ้น ระบบเตือนทันทีถ้า Socket แรม หรือขนาดเคสไม่ตรง', link: '/build', tone: 'cobalt', sort: 0, startsAt: new Date(now - 30 * 24 * h), endsAt: new Date(now + 60 * 24 * h) },
+    { kind: 'banner', slot: 'side', image: await storeAsset('banners/build.png'), title: 'ประกอบคอมเองง่าย ระบบเช็คความเข้ากันให้', subtitle: 'เลือกทีละชิ้น ระบบเตือนทันทีถ้า Socket แรม หรือขนาดเคสไม่ตรง', link: '/build', tone: 'cobalt', sort: 1, startsAt: new Date(now - 30 * 24 * h), endsAt: new Date(now + 60 * 24 * h) },
     { kind: 'banner', image: await storeAsset('banners/rtx50.png'), title: 'การ์ดจอรุ่นใหม่ RTX 50 Series', subtitle: 'พร้อมส่ง รับประกัน 3 ปี เคลมออนไลน์ได้ที่บัญชีของคุณ', link: '/shop?cat=vga', tone: 'slate', sort: 1, startsAt: new Date(now - 7 * 24 * h), endsAt: new Date(now + 30 * 24 * h) },
     { kind: 'banner', image: await storeAsset('banners/welcome10.png'), title: 'ลูกค้าใหม่ลด 10% ใส่โค้ด WELCOME10', subtitle: 'ลดสูงสุด ฿500 ใช้ได้คนละครั้ง', link: '/shop', tone: 'teal', sort: 2, startsAt: new Date(now - 30 * 24 * h), endsAt: new Date(now + 90 * 24 * h) },
   ] });
   await db.coupon.updateMany({ where: { code: { in: ['WELCOME10', 'SAVE300'] } }, data: { showOnShop: true } });
+  await seedCampaigns(db);
 
   // Product photos from the team (prisma/seed-assets/products/<SKU>.jpg); the rest keep the drawn illustration
   for (const f of await readdir(path.join(ASSETS, 'products'))) {
@@ -221,6 +222,90 @@ export async function seedPromotions(db: PrismaClient) {
   for (const b of await db.brand.findMany()) {
     if (existsSync(path.join(ASSETS, 'brands', `${b.slug}.png`))) await db.brand.update({ where: { id: b.id }, data: { logo: await storeAsset(`brands/${b.slug}.png`) } });
   }
+}
+
+// ── campaigns: festival promotions on their next calendar dates, and always-on banners ──
+// Festival dates are Bangkok wall-clock days; each campaign takes its next window that has not ended yet, so a fresh
+// seed always shows them as running or coming up in the back office.
+
+const bkk = (y: number, m: number, d: number, hh = 0) => new Date(`${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}T${String(hh).padStart(2, '0')}:00:00+07:00`);
+const thisYear = () => Number(new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok', year: 'numeric' }));
+/** The next window [start, end) built by `at(year)` that has not ended. */
+function nextWindow(at: (y: number) => [Date, Date]) {
+  const now = Date.now(), y = thisYear();
+  for (const yy of [y - 1, y, y + 1]) { const w = at(yy); if (w[1].getTime() > now) return { startsAt: w[0], endsAt: w[1] }; }
+  return (([startsAt, endsAt]) => ({ startsAt, endsAt }))(at(y + 1));
+}
+/** Black Friday: the day after the fourth Thursday of November, through Monday. */
+function blackFriday(y: number): [Date, Date] {
+  const firstThu = 1 + ((4 - new Date(Date.UTC(y, 10, 1)).getUTCDay() + 7) % 7);
+  const fri = firstThu + 21 + 1;
+  return [bkk(y, 11, fri), bkk(y, 11, fri + 4)];
+}
+
+/** A sale price about `pct` below the normal price, but never under cost + VAT + 2% (rounded up to 10 baht). */
+async function salePrices(db: PrismaClient, want: [string, number][]) {
+  const items = await db.inventoryItem.findMany({ where: { sku: { in: want.map(w => w[0]) } }, select: { sku: true, price: true, cost: true } });
+  return want.flatMap(([sku, pct]) => {
+    const it = items.find(i => i.sku === sku);
+    if (!it) return [];
+    const price = Number(it.price), floor = Number(it.cost) * 1.07 * 1.02;
+    const sale = Math.ceil(Math.max(price * (1 - pct), floor) / 10) * 10;
+    return sale < price ? [{ sku, salePrice: sale, off: Math.round((1 - sale / price) * 100) }] : [];
+  });
+}
+
+async function seedCampaigns(db: PrismaClient) {
+  const day = 864e5, now = Date.now();
+  const always = { startsAt: new Date(now - 7 * day), endsAt: new Date(now + 90 * day) };
+
+  // Black Friday: deep cuts on gear with room in the margin, smaller ones on CPUs and graphics cards
+  const bf = nextWindow(blackFriday);
+  const bfItems = await salePrices(db, [
+    ['MOU-LG-G502X', .25], ['HS-SS-A7', .25], ['KB-RZ-BWV4', .25], ['MOU-M720', .2], ['KB-K380', .2], ['MON-LG-27GR75Q', .1],
+    ['VGA-GB-4060', .05], ['VGA-SAP-7800XT', .05], ['CPU-R7-7800X3D', .05], ['CPU-R5-7600', .05], ['SSD-SS-990P2T', .1], ['RAM-GS-32D5', .1],
+  ]);
+  const bfMax = Math.max(...bfItems.map(i => i.off));
+  await db.promotion.create({ data: { kind: 'flash', title: 'BLACK FRIDAY ลดแรงสุดปี', subtitle: `ลดสูงสุด ${bfMax}% · 4 วันเท่านั้น`, ...bf,
+    items: { create: bfItems.map(({ sku, salePrice }) => ({ sku, salePrice })) } } });
+
+  // 12.12: twelve hours of flash prices, plus a one-per-customer code all day
+  const d1212 = nextWindow(y => [bkk(y, 12, 12), bkk(y, 12, 13)]);
+  const f1212Items = await salePrices(db, [
+    ['VGA-ASUS-4070S', .05], ['VGA-ZT-4060TI', .05], ['CPU-I5-14400F', .05], ['CPU-R7-9700X', .05],
+    ['MON-ASUS-27Q', .08], ['SSD-WD-SN850X', .1], ['RAM-KF-32D5', .1], ['HS-SS-A7', .2],
+  ]);
+  await db.promotion.create({ data: { kind: 'flash', title: '12.12 ลดใหญ่ส่งท้ายปี', subtitle: 'Flash Sale 12 ชั่วโมง เที่ยงคืนถึงเที่ยงวัน',
+    startsAt: d1212.startsAt, endsAt: new Date(d1212.startsAt.getTime() + 12 * 3600e3),
+    items: { create: f1212Items.map(({ sku, salePrice }) => ({ sku, salePrice })) } } });
+
+  const dad = nextWindow(y => [bkk(y, 12, 1), bkk(y, 12, 6)]);
+  const newYear = nextWindow(y => [bkk(y, 12, 25), bkk(y + 1, 1, 6)]);
+  const school = nextWindow(y => [bkk(y, 5, 1), bkk(y, 6, 16)]);
+  const payday = await db.promotion.findFirst({ where: { kind: 'flash', title: 'Flash Sale ปลายเดือน' }, select: { startsAt: true, endsAt: true } });
+
+  await db.coupon.createMany({ data: [
+    { code: 'DAD5', kind: 'percent', value: 5, maxDiscount: 1000, minSpend: 2000, ...dad, showOnShop: true, note: 'วันพ่อ ลด 5% ขั้นต่ำ 2,000 (สูงสุด 1,000)' },
+    { code: '1212', kind: 'fixed', value: 1212, minSpend: 12000, ...d1212, oncePerCustomer: true, showOnShop: true, note: '12.12 ลด 1,212 ขั้นต่ำ 12,000 คนละครั้ง' },
+    { code: 'NEWPC', kind: 'fixed', value: 500, minSpend: 25000, ...newYear, showOnShop: true, note: 'ปีใหม่ จัดสเปคครบชุด ลด 500 ขั้นต่ำ 25,000' },
+  ] });
+
+  // Banners without a poster use the shop's designed banner (title, subtitle and colour); a poster can be uploaded later.
+  // Festivals come first (sort 0), then the team's posters (1-2), then the always-on ones.
+  await db.promotion.createMany({ data: [
+    { kind: 'banner', title: 'BLACK FRIDAY ลดแรงสุดปี', subtitle: `เมาส์ หูฟัง คีย์บอร์ด ลดสูงสุด ${bfMax}% · การ์ดจอ ซีพียูก็ลด · 4 วันเท่านั้น`, link: '/#flash', tone: 'slate', sort: 0, ...bf },
+    { kind: 'banner', title: 'ของขวัญวันพ่อ อัปเกรดคอมให้พ่อ', subtitle: 'จอ เมาส์ คีย์บอร์ด ใส่โค้ด DAD5 ลดเพิ่ม 5%', link: '/shop?cat=peripheral', tone: 'violet', sort: 0, ...dad },
+    { kind: 'banner', title: '12.12 ลดใหญ่ส่งท้ายปี', subtitle: 'ใส่โค้ด 1212 ลดทันที ฿1,212 เมื่อซื้อครบ ฿12,000', link: '/shop', tone: 'cobalt', sort: 0, ...d1212 },
+    { kind: 'banner', slot: 'side', title: 'ปีใหม่ เครื่องใหม่', subtitle: 'จัดสเปคครบชุด ใส่โค้ด NEWPC ลดเพิ่ม ฿500', link: '/build', tone: 'teal', sort: 0, ...newYear },
+    { kind: 'banner', title: 'Back to School คอมเรียนงบไม่เกิน 20,000', subtitle: 'สเปคพร้อมเรียน ทำงาน เล่นเกมเบาๆ', link: '/build', tone: 'teal', sort: 0, ...school },
+    ...(payday ? [{ kind: 'banner', title: 'เงินเดือนออก ช้อปเลย!', subtitle: 'Flash Sale ปลายเดือน หมดเวลาแล้วหมดเลย', link: '/#flash', tone: 'cobalt', sort: 3, startsAt: payday.startsAt, endsAt: payday.endsAt }] : []),
+    { kind: 'banner', title: 'อัปเฟรมเรต ไม่ต้องเปลี่ยนทั้งเครื่อง', subtitle: 'การ์ดจอ RTX 40/50 · Radeon RX ราคาพิเศษ', link: '/shop?cat=vga', tone: 'slate', sort: 4, ...always },
+    { kind: 'banner', title: 'Work From Home ให้ลื่นกว่าเดิม', subtitle: 'จอ 27" 4K · เมาส์ไร้สาย · คีย์บอร์ดเงียบ', link: '/shop?cat=monitor', tone: 'teal', sort: 5, ...always },
+    { kind: 'banner', title: 'เครื่องช้า? เพิ่มแรม เปลี่ยน SSD เร็วขึ้นทันที', subtitle: 'SSD NVMe 1TB เริ่มต้น ฿2,190', link: '/shop?cat=ssd', tone: 'violet', sort: 6, ...always },
+    { kind: 'banner', title: 'ของแท้ทุกชิ้น เช็คประกันด้วย Serial', subtitle: 'แจ้งเคลมออนไลน์ ติดตามงานช่างได้ในบัญชี', link: '/account/claims', tone: 'cobalt', sort: 7, ...always },
+    { kind: 'banner', title: 'จ่ายง่ายด้วย PromptPay QR', subtitle: 'ยืนยันการชำระอัตโนมัติ ได้ใบกำกับภาษีทันที', link: '/shop', tone: 'teal', sort: 8, ...always },
+    { kind: 'banner', title: 'ซื้อครบ ฿2,000 ส่งฟรีทั่วประเทศ', subtitle: 'กรุงเทพฯ และปริมณฑลส่งฟรีทุกออเดอร์', link: '/shop', tone: 'cobalt', sort: 9, ...always },
+  ] });
 }
 
 /** Puts a seed image where uploaded photos live (Vercel Blob when connected, else UPLOAD_DIR), under a random name the
