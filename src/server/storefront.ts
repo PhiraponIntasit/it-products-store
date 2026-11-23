@@ -123,7 +123,8 @@ export async function homeData() {
 
 export async function productBySlug(slug: string) {
   const i = await db.inventoryItem.findFirst({
-    where: { active: true, slug: slug.toLowerCase() },
+    // Cards link to the SKU when a product has no slug yet (cardOf), so fall back to it.
+    where: { active: true, OR: [{ slug: slug.toLowerCase() }, { slug: null, sku: slug.toUpperCase() }] },
     include: { brand: true, category: true, images: { orderBy: { ord: 'asc' } } },
   });
   if (!i) return null;

@@ -33,8 +33,8 @@ async function openChat(p: Page) {
   await expect(panel(p)).toBeVisible();
 }
 async function say(p: Page, text: string) {
-  await panel(p).getByLabel('ข้อความ').fill(text);
-  await panel(p).getByRole('button', { name: 'ส่ง' }).click();
+  await panel(p).getByLabel('ข้อความ', { exact: true }).fill(text);
+  await panel(p).getByRole('button', { name: 'ส่งข้อความ' }).click();
   await expect(panel(p).locator('[data-role="customer"]', { hasText: text })).toBeVisible();
 }
 
@@ -42,7 +42,7 @@ test('visitor must sign in, comes back with the chat open; live replies both way
   const c = await makeCustomer('สมศรี แชทดี');
   await page.goto('/shop?cat=vga');
   await openChat(page);
-  await expect(panel(page).getByLabel('ข้อความ')).toHaveCount(0); // no way to write before signing in
+  await expect(panel(page).getByLabel('ข้อความ', { exact: true })).toHaveCount(0); // no way to write before signing in
   await expect(page.getByTestId('chat-status')).toHaveText('สำหรับสมาชิก');
   await panel(page).getByRole('link', { name: 'เข้าสู่ระบบ' }).click();
   await expect(page).toHaveURL(/\/account\/login\?next=/);
@@ -50,6 +50,7 @@ test('visitor must sign in, comes back with the chat open; live replies both way
   await expect(page).toHaveURL(/\/shop\?cat=vga&chat=1$/); // same page, chat reopened
   await expect(panel(page)).toContainText('สวัสดีครับ คุณสมศรี');
   await say(page, 'RTX 4060 ใส่เคส Q300L ได้ไหมคะ');
+  await panel(page).getByRole('button', { name: 'คุยกับพนักงาน' }).click(); // the assistant answers first; ask for a person
   await expect(page.getByTestId('chat-status')).toHaveText('รอพนักงานตอบ…');
 
   // Staff: waiting queue → open → reply (takes it).
@@ -58,7 +59,7 @@ test('visitor must sign in, comes back with the chat open; live replies both way
   await sk.goto('/chat');
   const row = sk.locator('tr', { hasText: 'สมศรี แชทดี' });
   await expect(row).toContainText('ใหม่ 1');
-  await expect(row).toContainText('RTX 4060 ใส่เคส Q300L ได้ไหมคะ');
+  await expect(row).toContainText('ผู้ช่วย:'); // preview = last message from a person or the assistant
   await row.getByRole('link', { name: 'สมศรี แชทดี' }).click();
   await expect(sk.getByText(c.email)).toBeVisible();
   await sk.getByLabel('คำตอบ').fill('ใส่ได้ครับ การ์ดยาว 192 mm เคสรับได้ 360 mm');
@@ -89,10 +90,10 @@ test('visitor must sign in, comes back with the chat open; live replies both way
   await openChat(page);
   await expect(panel(page)).toContainText('วิภาดา รุ่งเรือง ปิดบทสนทนา');
   await expect(panel(page).getByRole('button', { name: 'จบการสนทนา' })).toHaveCount(0);
-  await panel(page).getByLabel('ข้อความ').fill('มีอีกเรื่องค่ะ');
-  await panel(page).getByRole('button', { name: 'ส่ง' }).click();
+  await panel(page).getByLabel('ข้อความ', { exact: true }).fill('มีอีกเรื่องค่ะ');
+  await panel(page).getByRole('button', { name: 'ส่งข้อความ' }).click();
   await expect(panel(page).locator('[data-role="customer"]')).toHaveText(['มีอีกเรื่องค่ะ'].map(t => new RegExp(t))); // fresh list
-  await expect(page.getByTestId('chat-status')).toHaveText('รอพนักงานตอบ…');
+  await expect(page.getByTestId('chat-status')).toHaveText('ผู้ช่วยอัตโนมัติ · ตอบทันที'); // a new chat starts with the assistant
   expect(await db.chatThread.count({ where: { customerId: c.id } })).toBe(2);
   await sk.context().close();
 });
@@ -111,7 +112,7 @@ test('a reply while the customer is away is emailed once, with a link that reope
   await loginAs(mg, USERS.manager);
   await mg.goto(`/chat/${t.id}`);
   await expect(mg.getByText('ลูกค้าไม่ได้เปิดหน้าแชท', { exact: false })).toBeVisible();
-  await expect(mg.getByText('ยังไม่มีคำสั่งซื้อ')).toBeVisible();
+  await expect(mg.locator('aside').getByText('ยังไม่มีคำสั่งซื้อ')).toBeVisible();
   await expect(mg.getByRole('link', { name: 'ทดสอบ อีเมลแชท' })).toHaveAttribute('href', `/customers/${c.id}`);
   for (const msg of ['ขอเลขคำสั่งซื้อด้วยครับ', 'หรือดูได้ที่บัญชีของฉัน › คำสั่งซื้อครับ']) {
     await mg.getByLabel('คำตอบ').fill(msg);

@@ -7,6 +7,7 @@ import { getCustomer } from './customer-session';
 import { appUrl, sendMail } from './mail';
 import { ORDER_ST } from './orders';
 import { CLAIM_ST, OPEN_CLAIM } from './claims';
+import { MISS, ruleReply } from './assistant';
 import { baht, fmtDT } from '@/lib/domain';
 
 // Storefront live chat (person A). Signed-in customers only — a visitor is asked to sign in first, so staff always know
@@ -25,7 +26,7 @@ const EMAIL_GAP_MS = 15 * 60e3;
 const OPEN = ['bot', 'waiting', 'open'];
 
 export const CHAT_ST: Record<string, [string, string]> = {
-  bot: ['ผู้ช่วยอัตโนมัติ', 'tag-neutral'], waiting: ['รอพนักงาน', 'tag-accent-2'], open: ['กำลังคุย', 'tag-accent'], closed: ['ปิดแล้ว', 'tag-outline'],
+  bot: ['ผู้ช่วยอัตโนมัติกำลังตอบ', 'tag-neutral'], waiting: ['รอพนักงาน', 'tag-accent-2'], open: ['กำลังคุย', 'tag-accent'], closed: ['ปิดแล้ว', 'tag-outline'],
 };
 
 const threadInclude = { customer: { select: { id: true, name: true, email: true } }, assignee: { select: { name: true } } } satisfies Prisma.ChatThreadInclude;
@@ -74,26 +75,43 @@ export async function customerSend(textIn: string) {
   if (!text) throw new Fail('พิมพ์ข้อความก่อนส่ง');
   if (text.length > CHAT_MAX_LEN) throw new Fail(`ข้อความยาวได้ไม่เกิน ${CHAT_MAX_LEN} ตัวอักษร`);
   const me = await signedIn();
-  // Until the assistant (bot) arrives, every new conversation goes straight to staff.
-  const t = (await openThread(me.id)) ?? (await db.chatThread.create({ data: { customerId: me.id, status: 'waiting' }, include: threadInclude }));
+  // A new conversation starts with the assistant; it hands over to staff when it can't help.
+  const t = (await openThread(me.id)) ?? (await db.chatThread.create({ data: { customerId: me.id, status: 'bot' }, include: threadInclude }));
   const recent = await db.chatMessage.count({ where: { threadId: t.id, role: 'customer', createdAt: { gt: new Date(Date.now() - 60e3) } } });
   if (recent >= RATE_PER_MIN) throw new Fail('ส่งข้อความถี่เกินไป รอสักครู่แล้วลองใหม่');
   await db.$transaction([
     db.chatMessage.create({ data: { threadId: t.id, role: 'customer', text } }),
     db.chatThread.update({ where: { id: t.id }, data: { customerSeenAt: new Date() } }), // also bumps updatedAt → top of the staff inbox
   ]);
+  if (t.status === 'bot') await assistantTurn(t.id, me.id, text);
   return t.id;
 }
 
-/** The customer asks for a person (used by the assistant's "คุยกับพนักงาน" button). */
+/** The assistant answers the customer's latest message; two "didn't understand" in a row hand the chat to staff. */
+async function assistantTurn(threadId: string, customerId: string, text: string) {
+  let r;
+  try { r = await ruleReply(customerId, text); } catch (e) {
+    console.error('assistant failed', e);
+    r = { text: 'ขออภัย ผู้ช่วยอัตโนมัติขัดข้อง ขอส่งต่อให้พนักงานครับ', handoff: true };
+  }
+  if (r.miss) {
+    const prev = await db.chatMessage.findFirst({ where: { threadId, role: 'bot' }, orderBy: { id: 'desc' }, select: { text: true } });
+    if (prev?.text.startsWith(MISS)) r = { text: 'ขอโทษครับ ผมยังตอบเรื่องนี้ไม่ได้ ขอส่งต่อให้พนักงานช่วยดูนะครับ', handoff: true };
+  }
+  await db.chatMessage.create({ data: { threadId, role: 'bot', text: r.text, by: 'ผู้ช่วยอัตโนมัติ' } });
+  if (r.handoff) await handOff(threadId);
+}
+
+async function handOff(threadId: string) {
+  const n = await db.chatThread.updateMany({ where: { id: threadId, status: 'bot' }, data: { status: 'waiting' } });
+  if (n.count) await db.chatMessage.create({ data: { threadId, role: 'system', text: 'ส่งต่อให้พนักงานแล้ว — พนักงานจะตอบในหน้าต่างนี้' } });
+}
+
+/** The customer asks for a person ("คุยกับพนักงาน"): straight to the staff queue, starting a conversation if needed. */
 export async function customerAskStaff() {
-  const t = await openThread((await signedIn()).id);
-  if (!t) throw new Fail('ยังไม่มีบทสนทนา');
-  if (t.status !== 'bot') return;
-  await db.$transaction([
-    db.chatThread.update({ where: { id: t.id }, data: { status: 'waiting' } }),
-    db.chatMessage.create({ data: { threadId: t.id, role: 'system', text: 'ส่งต่อให้พนักงานแล้ว — พนักงานจะตอบในหน้าต่างนี้' } }),
-  ]);
+  const me = await signedIn();
+  const t = (await openThread(me.id)) ?? (await db.chatThread.create({ data: { customerId: me.id, status: 'bot' }, include: threadInclude }));
+  await handOff(t.id);
 }
 
 /** Customer ends the conversation from the widget. */
@@ -115,7 +133,7 @@ export const isChatTab = (t: string | undefined): t is ChatTab => CHAT_TABS.some
 function tabWhere(tab: ChatTab, meId: string): Prisma.ChatThreadWhereInput {
   if (tab === 'waiting') return { status: 'waiting' };
   if (tab === 'mine') return { status: 'open', assigneeId: meId };
-  if (tab === 'open') return { status: { in: ['waiting', 'open'] } };
+  if (tab === 'open') return { status: { in: ['bot', 'waiting', 'open'] } }; // includes chats the assistant is still answering
   return { status: 'closed' };
 }
 
@@ -132,7 +150,7 @@ export async function chatInbox(tab: ChatTab, meId: string) {
   const [rows, counts] = await Promise.all([
     db.chatThread.findMany({
       where: tabWhere(tab, meId), orderBy: tab === 'closed' ? [{ closedAt: 'desc' }] : [{ updatedAt: 'desc' }], take: 100, include: {
-        ...threadInclude, messages: { orderBy: { id: 'desc' }, take: 1 },
+        ...threadInclude, messages: { where: { role: { not: 'system' } }, orderBy: { id: 'desc' }, take: 1 },
       },
     }),
     Promise.all(CHAT_TABS.map(([t]) => t === 'closed' ? Promise.resolve(0) : db.chatThread.count({ where: tabWhere(t, meId) }))),
