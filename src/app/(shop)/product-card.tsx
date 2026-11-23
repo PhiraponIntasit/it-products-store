@@ -3,6 +3,7 @@ import type { ProductCard as BaseCard } from '@/server/storefront';
 
 type Card = BaseCard & { saleEndsAt?: string | null };
 import { LogoMark } from '@/components/logo';
+import { ProductArt } from './product-art';
 import { baht } from '@/lib/domain';
 import css from './storefront.module.css';
 
@@ -24,7 +25,7 @@ export function ProductCard({ p }: { p: Card }) {
   return (
     <Link href={`/p/${p.slug}`} className={css.card} data-sku={p.sku}>
       <div className={css.pic} style={p.image ? { backgroundImage: `url(${p.image})` } : undefined}>
-        {!p.image && <NoPicture label={p.category} />}
+        {!p.image && <ProductArt cat={p.categorySlug} brand={p.brand} label={`ภาพประกอบ ${p.name}`} />}
         {(p.saleEndsAt || off(p) > 0) && (
           <span className={css.flags}>
             {p.saleEndsAt && <span className={css.flagFlash}>FLASH SALE</span>}

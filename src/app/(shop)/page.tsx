@@ -4,6 +4,7 @@ import { homeData } from '@/server/storefront';
 import { FREE_SHIPPING_MIN } from '@/lib/shipping';
 import { ProductGrid } from './product-card';
 import { BannerCarousel, Countdown, CouponCard } from './home-widgets';
+import { accentOf } from './product-art';
 import css from './storefront.module.css';
 
 export const metadata: Metadata = { title: 'COREPICK · ร้านอุปกรณ์คอมพิวเตอร์' };
@@ -14,14 +15,13 @@ export default async function HomePage() {
   return (
     <div className="anim-page">
       <h1 className="sr-only">COREPICK ร้านอุปกรณ์คอมพิวเตอร์</h1>
-      <div className={css.heroGrid}>
-        {d.banners.length ? <BannerCarousel banners={d.banners} /> : (
-          <section className={`${css.banner} ${css.toneCobalt}`} aria-label="ร้าน">
+      {d.banners.length ? <BannerCarousel banners={d.banners} /> : (
+          <section className={`${css.banner} ${css.toneCobalt}`} aria-label="ร้าน" style={{ borderRadius: 'var(--radius-lg)' }}>
             <strong className={css.bannerTitle}>อุปกรณ์คอมพิวเตอร์ของแท้ เลือกง่าย ส่งไว</strong>
             <span className={css.bannerSub}>สเปคครบทุกชิ้น ดูจำนวนคงเหลือได้ทันที ชำระด้วย PromptPay QR</span>
           </section>
         )}
-        <div className={css.heroSide}>
+      <div className={css.promoTiles}>
           <Link href="/build" className={css.sideCard}>
             <strong>จัดสเปคคอมเอง</strong>
             <span>เลือกทีละชิ้น ระบบเช็ค Socket แรม ขนาดเคส และกำลังไฟให้</span>
@@ -32,8 +32,25 @@ export default async function HomePage() {
             <span>{d.flash ? `ลดสูงสุด ${Math.max(...d.flash.items.map(i => Math.round((1 - i.price / (i.compareAt ?? i.price)) * 100)))}% · ${d.flash.items.length} รายการ` : 'ดูสินค้าที่ลดราคาอยู่ตอนนี้'}</span>
             <span className={css.sideCta}>{d.flash ? 'ดู Flash Sale ›' : 'ดูสินค้า ›'}</span>
           </Link>
-        </div>
+          <Link href="/account/claims" className={css.sideCard}>
+            <strong>เคลมออนไลน์</strong>
+            <span>แจ้งเคลมจากคำสั่งซื้อของคุณ แนบรูปอาการ แล้วติดตามผลจากช่างได้ในบัญชี</span>
+            <span className={css.sideCta}>แจ้งเคลม ›</span>
+          </Link>
       </div>
+
+      {d.brands.length > 0 && (
+        <section className={css.brandWall} aria-labelledby="brands-h">
+          <h2 id="brands-h">สินค้าจากแบรนด์ชั้นนำ</h2>
+          <nav className={css.brands} aria-label="แบรนด์">
+            {d.brands.map(b => (
+              <Link key={b.slug} href={`/shop?brand=${b.slug}`} aria-label={`สินค้าแบรนด์ ${b.name}`} style={{ ['--brand' as string]: accentOf(b.name) }}>
+                {b.logo ? <img src={b.logo} alt="" /> : <span className={css.wordmark}>{b.name}</span>}
+              </Link>
+            ))}
+          </nav>
+        </section>
+      )}
 
       <ul className={css.services} aria-label="บริการของร้าน">
         <li><strong>ส่งฟรี</strong><span>กรุงเทพฯ และปริมณฑล · ครบ ฿{FREE_SHIPPING_MIN.toLocaleString('en-US')} ส่งฟรีทั่วประเทศ</span></li>
@@ -85,12 +102,7 @@ export default async function HomePage() {
       <div className={css.secHead}><h2>สินค้ามาใหม่</h2><Link href="/shop?sort=new">ดูทั้งหมด</Link></div>
       {d.newest.length ? <ProductGrid items={d.newest} /> : <div className="empty">ยังไม่มีสินค้าขึ้นหน้าร้าน</div>}
 
-      {d.brands.length > 0 && <>
-        <div className={css.secHead}><h2>แบรนด์</h2></div>
-        <nav className={css.brands} aria-label="แบรนด์">
-          {d.brands.map(b => <Link key={b.slug} href={`/shop?brand=${b.slug}`}>{b.name}</Link>)}
-        </nav>
-      </>}
+
     </div>
   );
 }

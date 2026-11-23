@@ -30,7 +30,7 @@ export default async function ProductPage({ params }: Props) {
       </nav>
 
       <div className={css.prod}>
-        <Gallery images={p.images} name={p.name} category={p.category?.name ?? ''} />
+        <Gallery images={p.images} name={p.name} category={p.category?.slug ?? ''} brand={p.brand?.name ?? ''} />
         <div className={css.buy}>
           {p.brand && <Link href={`/shop?brand=${p.brand.slug}`} className="kicker">{p.brand.name}</Link>}
           <h1>{p.name}</h1>

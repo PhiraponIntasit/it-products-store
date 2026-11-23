@@ -57,7 +57,7 @@ test('a flash sale is the price shown and charged; switching it off restores the
   await expect(card).toContainText('฿2,000.00');
   await shop.goto(`/p/${sku.toLowerCase()}`);
   await expect(shop.getByTestId('flash-note')).toContainText('ราคานี้สิ้นสุดใน');
-  await expect(shop.getByRole('timer')).toContainText(/1 วัน|2 วัน/);
+  await expect(shop.getByRole('timer')).toHaveAttribute('aria-label', /เหลือเวลา [12] วัน/);
 
   // Cart and checkout charge the sale price; the order line keeps it.
   await customer(shop, { [sku]: 2 });
@@ -124,4 +124,41 @@ test('banner links must stay inside the shop', async ({ page }) => {
   await dlg.locator('#pm-link').fill('https://evil.example.com');
   await dlg.getByRole('button', { name: 'บันทึก' }).click();
   await expect(dlg.getByText('ลิงก์ต้องเป็นหน้าในร้าน')).toBeVisible();
+});
+
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC', 'base64');
+
+test('brand tiles lead to that brand; the staff icon leads to the back office', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('navigation', { name: 'แบรนด์' }).getByRole('link', { name: 'สินค้าแบรนด์ AMD' }).click();
+  await expect(page).toHaveURL(/\/shop\?brand=amd$/);
+  await expect(page.locator('[data-sku="CPU-R5-7600"]')).toBeVisible();
+  await page.getByRole('navigation', { name: 'เมนูร้าน' }).getByRole('link', { name: 'พนักงาน · ระบบหลังร้าน' }).click();
+  await expect(page).toHaveURL(/\/login$/);
+});
+
+test('a poster uploaded for a banner shows on the home page; a brand logo replaces its wordmark', async ({ page }) => {
+  const s = stamp().toUpperCase(), title = `E2E โปสเตอร์ ${s}`;
+  const b = await db.promotion.create({ data: { kind: 'banner', title, link: '/shop', sort: 0, startsAt: new Date(Date.now() - 3600e3), endsAt: new Date(Date.now() + 3600e3) } });
+  made.push(b.id);
+  await loginAs(page, USERS.manager);
+  await page.goto('/coupons?tab=promotions');
+  await page.getByLabel(`โปสเตอร์ ${title}`).setInputFiles({ name: 'poster.png', mimeType: 'image/png', buffer: PNG });
+  await expect(page.getByRole('img', { name: `โปสเตอร์ ${title}` })).toBeVisible();
+  await page.goto('/');
+  const poster = page.getByRole('region', { name: 'โปรโมชั่น' }).locator(`img[alt="${title}"]`);   // may be a slide not on screen yet
+  await expect(poster).toHaveCount(1);
+  const src = await poster.getAttribute('src');
+  expect((await page.request.get(src!)).headers()['content-type']).toBe('image/png');
+
+  await loginAs(page, USERS.storekeeper);
+  await page.goto('/products/catalog');
+  await page.getByLabel('โลโก้ Zotac').setInputFiles({ name: 'zotac.png', mimeType: 'image/png', buffer: PNG });
+  await expect(page.getByRole('img', { name: 'โลโก้ Zotac' })).toBeVisible();
+  await page.goto('/');
+  await expect(page.getByRole('link', { name: 'สินค้าแบรนด์ Zotac' }).locator('img')).toHaveCount(1);
+  // put it back as it was
+  await page.goto('/products/catalog');
+  await page.getByRole('button', { name: 'ลบโลโก้ Zotac' }).click();
+  await expect(page.getByRole('img', { name: 'โลโก้ Zotac' })).toHaveCount(0);
 });

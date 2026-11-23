@@ -35,17 +35,32 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
             <Link href="/cart" className={`${css.navLink} ${css.cartLink}`} aria-label={`ตะกร้าสินค้า ${cart.count} ชิ้น`}>
               ตะกร้า{cart.count > 0 && <span className={`${css.badge} tnum`} aria-hidden>{cart.count}</span>}
             </Link>
+            <Link href={staff ? homePath(staff) : '/login'} className={css.staffIcon} aria-label="พนักงาน · ระบบหลังร้าน" title="สำหรับพนักงาน: เข้าระบบหลังร้าน">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <rect x="4" y="3" width="16" height="18" rx="2.5" /><path d="M9.5 3v2.5h5V3" /><circle cx="12" cy="11" r="2.6" /><path d="M7.8 17.5c.8-2 2.4-3 4.2-3s3.4 1 4.2 3" />
+              </svg>
+              <span className={css.staffText}>พนักงาน</span>
+            </Link>
           </nav>
         </div>
       </header>
       <main className={css.main}>{children}</main>
       <footer className={css.foot}>
         <div className={css.footIn}>
-          <div><h2>{SHOP.brand}</h2><p>{SHOP.name}<br />{SHOP.addr}<br />โทร {SHOP.phone}</p></div>
-          <div><h2>การจัดส่ง</h2><p>กรุงเทพฯ และปริมณฑลส่งฟรี · ต่างจังหวัด ฿{UPCOUNTRY_FEE}<br />ซื้อครบ ฿{FREE_SHIPPING_MIN.toLocaleString('en-US')} ส่งฟรีทั่วประเทศ</p></div>
-          <div><h2>การชำระเงินและประกัน</h2><p>ชำระผ่าน PromptPay QR · ราคารวม VAT 7%<br />สินค้ารับประกันตามระยะที่ระบุ นับจากวันจัดส่ง</p></div>
+          <div><h2>{SHOP.brand}</h2><p>ร้านอุปกรณ์คอมพิวเตอร์ ซีพียู การ์ดจอ เมนบอร์ด และอุปกรณ์ต่อพ่วง พร้อมระบบจัดสเปคที่เช็คความเข้ากันให้ทุกชิ้น</p></div>
+          <div><h2>บริการลูกค้า</h2><ul className={css.footLinks}>
+            <li><Link href="/account/orders">เช็คสถานะคำสั่งซื้อ</Link></li>
+            <li><Link href="/account/claims">แจ้งเคลม / ติดตามการเคลม</Link></li>
+            <li><Link href="/build">จัดสเปคคอม</Link></li>
+            <li><Link href="/cart">ตะกร้าสินค้า</Link></li>
+          </ul></div>
+          <div><h2>การจัดส่งและชำระเงิน</h2><p>กรุงเทพฯ และปริมณฑลส่งฟรี · ต่างจังหวัด ฿{UPCOUNTRY_FEE}<br />ซื้อครบ ฿{FREE_SHIPPING_MIN.toLocaleString('en-US')} ส่งฟรีทั่วประเทศ<br />ชำระผ่าน PromptPay QR · ราคารวม VAT 7%<br />รับประกันตามระยะที่ระบุ นับจากวันจัดส่ง</p></div>
+          <div><h2>ติดต่อเรา</h2><p>{SHOP.name}<br />{SHOP.addr}<br />โทร {SHOP.phone}</p></div>
         </div>
-        <div className={css.footStaff}><Link href="/login">ระบบหลังร้านสำหรับพนักงาน</Link></div>
+        <div className={css.footStaff}>
+          <span>© {new Date().getFullYear()} {SHOP.brand} · ข้อมูลร้านเป็นข้อมูลสมมติสำหรับโครงงาน</span>
+          <Link href="/login">ระบบหลังร้านสำหรับพนักงาน</Link>
+        </div>
       </footer>
     </div>
   );

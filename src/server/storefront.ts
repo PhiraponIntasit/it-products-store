@@ -97,7 +97,7 @@ export async function homeData() {
     livePromotions(now),
     db.coupon.findMany({ where: { showOnShop: true, active: true, startsAt: { lte: now }, endsAt: { gt: now } }, orderBy: { code: 'asc' } }),
     db.orderLine.groupBy({ by: ['sku'], where: { order: { status: { in: ['paid', 'packing', 'shipped', 'completed'] }, paidAt: { gte: new Date(now.getTime() - 30 * 864e5) } } }, _sum: { qty: true }, orderBy: { _sum: { qty: 'desc' } }, take: 12 }),
-    db.brand.findMany({ orderBy: { name: 'asc' }, select: { slug: true, name: true, _count: { select: { items: { where: { active: true } } } } } }),
+    db.brand.findMany({ orderBy: { name: 'asc' }, select: { slug: true, name: true, logo: true, _count: { select: { items: { where: { active: true } } } } } }),
   ]);
   const ROW_CATS = ['vga', 'cpu', 'mainboard', 'monitor'];
   const [flashRows, bestRows, rowItems] = await Promise.all([
@@ -114,7 +114,7 @@ export async function homeData() {
     coupons: coupons.filter(c => c.usageLimit == null || c.used < c.usageLimit).map(c => ({ code: c.code, text: describe(ruleOf(c)), oncePerCustomer: c.oncePerCustomer, endsAt: c.endsAt.toISOString() })),
     best: (await withSales(bestRows.map(cardOf), now)).sort((x, y) => order.get(x.sku)! - order.get(y.sku)!).slice(0, 8),
     rows: (await Promise.all(rowItems.map(r => withSales(r.map(cardOf), now)))).map((items, k) => ({ slug: ROW_CATS[k], name: cats.find(c => c.slug === ROW_CATS[k])?.name ?? ROW_CATS[k], items })).filter(r => r.items.length),
-    brands: brands.filter(b => b._count.items > 0).map(b => ({ slug: b.slug, name: b.name })),
+    brands: brands.filter(b => b._count.items > 0 && b.slug !== 'generic').map(b => ({ slug: b.slug, name: b.name, logo: b.logo ? `/api/brands/${b.slug}/logo?v=${b.logo.slice(0, 8)}` : null })),
     newest: await withSales(newest.map(cardOf), now),
     deals: (await withSales(deals.map(cardOf), now)).filter(d => !d.saleEndsAt && d.compareAt != null && d.compareAt > d.price).slice(0, 4),
   };

@@ -1,15 +1,15 @@
 'use client';
 import { useState } from 'react';
-import { NoPicture } from '../../product-card';
+import { ProductArt } from '../../product-art';
 import css from '../../storefront.module.css';
 
-export function Gallery({ images, name, category }: { images: { id: string; src: string }[]; name: string; category: string }) {
+export function Gallery({ images, name, category, brand = '' }: { images: { id: string; src: string }[]; name: string; category: string; brand?: string }) {
   const [i, setI] = useState(0);
   const cur = images[i];
   return (
     <div className={css.gallery}>
-      <div className={css.mainPic} style={cur ? { backgroundImage: `url(${cur.src})` } : undefined} role="img" aria-label={cur ? `รูปสินค้า ${name}` : `ยังไม่มีรูปสินค้า ${name}`}>
-        {!cur && <NoPicture label={category} size={72} />}
+      <div className={css.mainPic} style={cur ? { backgroundImage: `url(${cur.src})` } : undefined} role="img" aria-label={cur ? `รูปสินค้า ${name}` : `ภาพประกอบ ${name}`}>
+        {!cur && <ProductArt cat={category} brand={brand} label="" />}
       </div>
       {images.length > 1 && (
         <div className={css.thumbs} role="group" aria-label="รูปสินค้า">

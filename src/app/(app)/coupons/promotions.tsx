@@ -1,6 +1,6 @@
 'use client';
 import { useMemo, useState } from 'react';
-import { savePromo, setPromoActive } from '@/server/actions/promotions';
+import { savePromo, setPromoActive, setPromoImage } from '@/server/actions/promotions';
 import { useAction } from '@/components/use-action';
 import { Dialog, Err } from '@/components/dialog';
 import { baht, bahtS } from '@/lib/domain';
@@ -37,7 +37,7 @@ export function PromotionsView({ rows, products, now }: { rows: PromotionRow[]; 
                   {p.kind === 'flash' ? p.items.map(i => (
                     <div key={i.sku} className="tnum">{i.name} · <s className="muted">{bahtS(i.price)}</s> → <strong>{bahtS(i.sale)}</strong> (−{i.off}%)
                       {i.margin < 0 && <span className="err"> · ต่ำกว่าทุน {bahtS(-i.margin)}</span>}</div>
-                  )) : <code>{p.link || '/shop'}</code>}
+                  )) : <><code>{p.link || '/shop'}</code><Poster p={p} /></>}
                 </td>
                 <td><span className={`tag ${p.statusTag}`}>{p.statusLabel}</span></td>
                 <td className="r"><div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
@@ -110,5 +110,22 @@ function PromoDialog({ row, kind, products, now, onClose }: { row: PromotionRow 
         <button className="btn btn-primary" disabled={pending} onClick={() => run(() => savePromo(row ? row.id : null, f, Object.fromEntries(items.map(i => [i.sku, i.sale]))), onClose)}>บันทึก</button>
       </div>
     </Dialog>
+  );
+}
+
+/** A banner's poster: the uploaded image, or the designed poster the storefront draws when there is none. */
+function Poster({ p }: { p: PromotionRow }) {
+  const { run, pending } = useAction({ errorAs: 'toast' });
+  const send = (file?: File) => { const fd = new FormData(); if (file) fd.append('poster', file); run(() => setPromoImage(p.id, fd)); };
+  return (
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6, flexWrap: 'wrap' }}>
+      {p.image ? <img src={p.image} alt={`โปสเตอร์ ${p.title}`} width={120} height={50} style={{ objectFit: 'cover', borderRadius: 6 }} /> : <span className="muted">ไม่มีโปสเตอร์ · ใช้แบนเนอร์สำเร็จรูป</span>}
+      <label className="btn btn-ghost" style={{ cursor: 'pointer' }}>
+        {p.image ? 'เปลี่ยนโปสเตอร์' : 'อัปโหลดโปสเตอร์'}
+        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden disabled={pending} aria-label={`โปสเตอร์ ${p.title}`}
+          onChange={e => { const f = e.target.files?.[0]; if (f) send(f); e.target.value = ''; }} />
+      </label>
+      {p.image && <button className="btn btn-ghost" disabled={pending} onClick={() => send()} aria-label={`ลบโปสเตอร์ ${p.title}`}>ลบ</button>}
+    </div>
   );
 }

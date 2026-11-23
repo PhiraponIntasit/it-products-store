@@ -111,6 +111,7 @@ model Brand {
   id    String          @id @default(cuid())
   slug  String          @unique
   name  String
+  /// Logo uploaded by the shop (file name in the upload store); without one the name is shown as a wordmark
   logo  String?
   items InventoryItem[]
 }
@@ -502,6 +503,8 @@ model Promotion {
   link      String          @default("")
   /// Banner colour from a fixed palette (cobalt | slate | teal | violet)
   tone      String          @default("cobalt")
+  /// Banner poster uploaded by the shop (file name in the upload store); without one a designed poster is drawn
+  image     String?
   startsAt  DateTime
   endsAt    DateTime
   active    Boolean         @default(true)

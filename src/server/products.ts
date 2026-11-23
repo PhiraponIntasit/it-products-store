@@ -56,8 +56,8 @@ export async function catalogOptions() {
     db.brand.findMany({ orderBy: { name: 'asc' }, include: { _count: { select: { items: true } } } }),
   ]);
   return {
-    categories: categories.map(c => ({ id: c.id, slug: c.slug, name: c.name, count: c._count.items })),
-    brands: brands.map(b => ({ id: b.id, slug: b.slug, name: b.name, count: b._count.items })),
+    categories: categories.map(c => ({ id: c.id, slug: c.slug, name: c.name, count: c._count.items, logo: null as string | null })),
+    brands: brands.map(b => ({ id: b.id, slug: b.slug, name: b.name, count: b._count.items, logo: b.logo ? `/api/brands/${b.slug}/logo?v=${b.logo.slice(0, 8)}` : null })),
   };
 }
 export type CatalogOptions = Awaited<ReturnType<typeof catalogOptions>>;

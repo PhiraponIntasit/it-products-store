@@ -4,6 +4,8 @@ import { db, num } from './db';
 import { Fail, str } from './act';
 import { audit } from './auth';
 import { zonedTime, dayKey, DISPLAY_TZ, bahtS } from '@/lib/domain';
+import { dropPhotos, type SavedPhoto } from './photos';
+import { removeUpload } from './uploads';
 
 // Storefront promotions (B): flash sales (time-limited sale prices, applied everywhere through pricing.ts) and
 // home-page banners. Kept apart from coupons, which customers type at checkout.
@@ -94,6 +96,7 @@ export async function promotionRows() {
     const [statusLabel, statusTag] = promoStatus(p, now);
     return {
       id: p.id, kind: p.kind, title: p.title, subtitle: p.subtitle, link: p.link, tone: p.tone, active: p.active, statusLabel, statusTag,
+      image: p.image ? `/api/promotions/${p.id}/image?v=${p.image.slice(0, 8)}` : null,
       periodText: `${localInput(p.startsAt).replace('T', ' ')} – ${localInput(p.endsAt).replace('T', ' ')}`,
       items: p.items.map(i => {
         const price = num(i.item.price), sale = num(i.salePrice), cost = num(i.item.cost);
@@ -121,7 +124,20 @@ export async function livePromotions(now = new Date()) {
     db.promotion.findMany({ where: { kind: 'flash', ...running }, orderBy: { endsAt: 'asc' }, include: { items: { select: { sku: true } } } }),
   ]);
   return {
-    banners: banners.map(b => ({ id: b.id, title: b.title, subtitle: b.subtitle, link: b.link || '/shop', tone: b.tone })),
+    banners: banners.map(b => ({ id: b.id, title: b.title, subtitle: b.subtitle, link: b.link || '/shop', tone: b.tone, image: b.image ? `/api/promotions/${b.id}/image?v=${b.image.slice(0, 8)}` : null })),
     flash: flash.length ? { title: flash[0].title, subtitle: flash[0].subtitle, endsAt: flash[0].endsAt.toISOString(), skus: [...new Set(flash.flatMap(f => f.items.map(i => i.sku)))] } : null,
   };
+}
+
+/** Replace (or with no file, remove) a banner's poster. The old file is deleted after the row points at the new one. */
+export async function setPromotionImage(me: Staff, id: string, photo: SavedPhoto | null) {
+  const p = await db.promotion.findUnique({ where: { id } });
+  if (!p) { if (photo) await dropPhotos([photo]); throw new Fail('ไม่พบโปรโมชั่น'); }
+  if (photo && p.kind !== 'banner') { await dropPhotos([photo]); throw new Fail('ใส่โปสเตอร์ได้เฉพาะแบนเนอร์'); }
+  await db.$transaction(async tx => {
+    await tx.promotion.update({ where: { id }, data: { image: photo?.file ?? null } });
+    await audit(tx, me, 'coupon', photo ? 'อัปโหลดโปสเตอร์แบนเนอร์' : 'ลบโปสเตอร์แบนเนอร์', p.title, photo ? `${photo.name} · ${Math.round(photo.size / 1024)} KB` : '');
+  });
+  if (p.image) await removeUpload(p.image);
+  return p.title;
 }
