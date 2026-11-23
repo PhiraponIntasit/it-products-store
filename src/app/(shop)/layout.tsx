@@ -35,12 +35,13 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
             <Link href="/cart" className={`${css.navLink} ${css.cartLink}`} aria-label={`ตะกร้าสินค้า ${cart.count} ชิ้น`}>
               ตะกร้า{cart.count > 0 && <span className={`${css.badge} tnum`} aria-hidden>{cart.count}</span>}
             </Link>
-            <Link href={staff ? homePath(staff) : '/login'} className={css.staffIcon} aria-label="พนักงาน · ระบบหลังร้าน" title="สำหรับพนักงาน: เข้าระบบหลังร้าน">
+            {/* Only on a browser with a back-office session: customers never see a way into the back office (staff open /login). */}
+            {staff && <Link href={homePath(staff)} className={css.staffIcon} aria-label="พนักงาน · ระบบหลังร้าน" title="กลับไประบบหลังร้าน">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <rect x="4" y="3" width="16" height="18" rx="2.5" /><path d="M9.5 3v2.5h5V3" /><circle cx="12" cy="11" r="2.6" /><path d="M7.8 17.5c.8-2 2.4-3 4.2-3s3.4 1 4.2 3" />
               </svg>
               <span className={css.staffText}>พนักงาน</span>
-            </Link>
+            </Link>}
           </nav>
         </div>
       </header>
@@ -59,7 +60,6 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
         </div>
         <div className={css.footStaff}>
           <span>© {new Date().getFullYear()} {SHOP.brand} · ข้อมูลร้านเป็นข้อมูลสมมติสำหรับโครงงาน</span>
-          <Link href="/login">ระบบหลังร้านสำหรับพนักงาน</Link>
         </div>
       </footer>
     </div>
