@@ -7,6 +7,7 @@ import { MAX_IMAGE_BYTES, removeUpload, saveUpload, sniffImage } from '../upload
 import { parseSpecs, SPEC_FIELDS, specFieldsFor, specText } from '@/lib/specs';
 import { baht } from '@/lib/domain';
 import { slugify } from '@/lib/slug';
+import { dropPhotos, savePhotos } from '../photos';
 
 /** Photos per product (the storefront gallery). */
 const MAX_PRODUCT_IMAGES = 8;
@@ -226,5 +227,21 @@ export async function deleteCatalogEntry(kind: Kind, id: string) {
       throw e;
     });
     return `ลบ${KIND_LABEL[kind]}แล้ว`;
+  });
+}
+
+/** A brand's logo for the storefront brand strip (one image; an empty form removes it). */
+export async function setBrandLogo(id: string, fd: FormData) {
+  return act(async () => {
+    const me = await requireAction('products');
+    const b = await db.brand.findUnique({ where: { id } });
+    const [photo] = await savePhotos(fd.getAll('logo'), 1);
+    if (!b) { if (photo) await dropPhotos([photo]); throw new Fail('ไม่พบยี่ห้อ'); }
+    await db.$transaction(async tx => {
+      await tx.brand.update({ where: { id }, data: { logo: photo?.file ?? null } });
+      await audit(tx, me, 'product', photo ? 'อัปโหลดโลโก้ยี่ห้อ' : 'ลบโลโก้ยี่ห้อ', b.slug, b.name);
+    });
+    if (b.logo) await removeUpload(b.logo);
+    return photo ? `อัปโหลดโลโก้ ${b.name} แล้ว` : `ลบโลโก้ ${b.name} แล้ว`;
   });
 }

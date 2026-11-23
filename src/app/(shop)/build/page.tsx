@@ -4,7 +4,8 @@ import { buildHref, candidates, isPickSlot, loadBuild, readSelection, type Build
 import { getCustomer } from '@/server/customer-session';
 import { SLOTS, type Slot } from '@/lib/compat';
 import { baht } from '@/lib/domain';
-import { NoPicture, StockNote } from '../product-card';
+import { StockNote } from '../product-card';
+import { ProductArt } from '../product-art';
 import { BuildActions } from './actions';
 import css from '../storefront.module.css';
 
@@ -13,7 +14,7 @@ export const metadata: Metadata = { title: 'จัดสเปคคอม · CO
 type SP = Record<string, string | string[] | undefined>;
 
 function Thumb({ p }: { p: BuildPart; label?: string }) {
-  return <span className={css.thumb} style={p.image ? { backgroundImage: `url(${p.image})` } : undefined}>{!p.image && <NoPicture label="" size={28} />}</span>;
+  return <span className={css.thumb} style={p.image ? { backgroundImage: `url(${p.image})` } : undefined}>{!p.image && <ProductArt cat={p.categorySlug} brand={p.brand} label="" />}</span>;
 }
 
 export default async function BuildPage({ searchParams }: { searchParams: Promise<SP> }) {

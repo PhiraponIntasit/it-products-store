@@ -3,11 +3,15 @@ import type { Prisma } from '@prisma/client';
 import { db, num } from './db';
 import { available } from './stock-reserve';
 import { imageUrl } from './products';
+import { withSales } from './pricing';
+import { livePromotions } from './promotions';
+import { ruleOf } from './coupons';
+import { describe } from '@/lib/coupon';
 import { pageOf } from '@/lib/paging';
 import { specFieldsFor, specText, type Specs } from '@/lib/specs';
 
 // Storefront catalogue: only products marked `active` are ever shown. Prices come from the database
-// (VAT included) and "in stock" is qty − reserved, the same number checkout uses.
+// (VAT included, with a running flash sale applied by withSales) and "in stock" is qty − reserved, the same number checkout uses.
 
 export const SHOP_PAGE_SIZE = 24;
 export const SORTS = { new: 'มาใหม่', 'price-asc': 'ราคาต่ำ → สูง', 'price-desc': 'ราคาสูง → ต่ำ' } as const;
@@ -65,24 +69,54 @@ export async function listProducts(f: ShopFilter, rawPage: string | undefined) {
     db.brand.findMany({ orderBy: { name: 'asc' }, select: { slug: true, name: true, _count: { select: { items: { where: { AND: [base, byCat] } } } } } }),
   ]);
   const page = pageOf(rawPage, total, SHOP_PAGE_SIZE);
-  const rows = await db.inventoryItem.findMany({ where, include: cardInclude, orderBy: ORDER[f.sort], skip: page.skip, take: page.size });
+  let cards;
+  if (f.sort === 'new') {
+    const rows = await db.inventoryItem.findMany({ where, include: cardInclude, orderBy: ORDER.new, skip: page.skip, take: page.size });
+    cards = await withSales(rows.map(cardOf));
+  } else {
+    // Sort by the price the customer sees (a flash sale lowers it), so the matching set is priced first, then paged.
+    const all = await withSales((await db.inventoryItem.findMany({ where, include: cardInclude, orderBy: ORDER[f.sort] })).map(cardOf));
+    const dir = f.sort === 'price-asc' ? 1 : -1;
+    cards = all.sort((a, b) => dir * (a.price - b.price) || a.sku.localeCompare(b.sku)).slice(page.skip, page.skip + page.size);
+  }
   return {
-    rows: rows.map(cardOf), page,
+    rows: cards, page,
     categories: cats.filter(c => c._count.items > 0 || c.slug === f.cat).map(c => ({ slug: c.slug, name: c.name, count: c._count.items })),
     brands: brands.filter(b => b._count.items > 0 || b.slug === f.brand).map(b => ({ slug: b.slug, name: b.name, count: b._count.items })),
   };
 }
 
+/** Home page: running promotions (banners, flash sale), coupons shown on the shop, best sellers, a row per main
+ *  category, brands and new arrivals. Every price goes through withSales, so a flash sale shows everywhere at once. */
 export async function homeData() {
-  const [cats, newest, deals] = await Promise.all([
+  const now = new Date();
+  const [cats, newest, deals, live, coupons, top, brands] = await Promise.all([
     db.category.findMany({ orderBy: [{ sort: 'asc' }, { name: 'asc' }], select: { slug: true, name: true, _count: { select: { items: { where: { active: true } } } } } }),
     db.inventoryItem.findMany({ where: { active: true }, include: cardInclude, orderBy: ORDER.new, take: 8 }),
     db.inventoryItem.findMany({ where: { active: true, compareAt: { not: null } }, include: cardInclude, orderBy: { price: 'desc' }, take: 8 }),
+    livePromotions(now),
+    db.coupon.findMany({ where: { showOnShop: true, active: true, startsAt: { lte: now }, endsAt: { gt: now } }, orderBy: { code: 'asc' } }),
+    db.orderLine.groupBy({ by: ['sku'], where: { order: { status: { in: ['paid', 'packing', 'shipped', 'completed'] }, paidAt: { gte: new Date(now.getTime() - 30 * 864e5) } } }, _sum: { qty: true }, orderBy: { _sum: { qty: 'desc' } }, take: 12 }),
+    db.brand.findMany({ orderBy: { name: 'asc' }, select: { slug: true, name: true, logo: true, _count: { select: { items: { where: { active: true } } } } } }),
   ]);
+  const ROW_CATS = ['vga', 'cpu', 'mainboard', 'monitor'];
+  const [flashRows, bestRows, rowItems] = await Promise.all([
+    live.flash ? db.inventoryItem.findMany({ where: { active: true, sku: { in: live.flash.skus } }, include: cardInclude }) : [],
+    db.inventoryItem.findMany({ where: { active: true, sku: { in: top.map(t => t.sku) } }, include: cardInclude }),
+    Promise.all(ROW_CATS.map(slug => db.inventoryItem.findMany({ where: { active: true, category: { slug } }, include: cardInclude, orderBy: [{ price: 'asc' }, { sku: 'asc' }], take: 4 }))),
+  ]);
+  const order = new Map(top.map((t, k) => [t.sku, k]));
+  const flash = live.flash ? (await withSales(flashRows.map(cardOf), now)).filter(c => c.saleEndsAt) : [];
   return {
     categories: cats.filter(c => c._count.items > 0).map(c => ({ slug: c.slug, name: c.name, count: c._count.items })),
-    newest: newest.map(cardOf),
-    deals: deals.map(cardOf).filter(d => d.compareAt != null && d.compareAt > d.price).slice(0, 4),
+    banners: live.banners,
+    flash: live.flash && flash.length ? { title: live.flash.title, subtitle: live.flash.subtitle, endsAt: live.flash.endsAt, items: flash.sort((x, y) => (y.compareAt ?? 0) - y.price - ((x.compareAt ?? 0) - x.price)) } : null,
+    coupons: coupons.filter(c => c.usageLimit == null || c.used < c.usageLimit).map(c => ({ code: c.code, text: describe(ruleOf(c)), oncePerCustomer: c.oncePerCustomer, endsAt: c.endsAt.toISOString() })),
+    best: (await withSales(bestRows.map(cardOf), now)).sort((x, y) => order.get(x.sku)! - order.get(y.sku)!).slice(0, 8),
+    rows: (await Promise.all(rowItems.map(r => withSales(r.map(cardOf), now)))).map((items, k) => ({ slug: ROW_CATS[k], name: cats.find(c => c.slug === ROW_CATS[k])?.name ?? ROW_CATS[k], items })).filter(r => r.items.length),
+    brands: brands.filter(b => b._count.items > 0 && b.slug !== 'generic').map(b => ({ slug: b.slug, name: b.name, logo: b.logo ? `/api/brands/${b.slug}/logo?v=${b.logo.slice(0, 8)}` : null })),
+    newest: await withSales(newest.map(cardOf), now),
+    deals: (await withSales(deals.map(cardOf), now)).filter(d => !d.saleEndsAt && d.compareAt != null && d.compareAt > d.price).slice(0, 4),
   };
 }
 
@@ -96,15 +130,16 @@ export async function productBySlug(slug: string) {
   const related = i.categoryId
     ? await db.inventoryItem.findMany({ where: { active: true, categoryId: i.categoryId, NOT: { sku: i.sku } }, include: cardInclude, orderBy: ORDER.new, take: 4 })
     : [];
+  const [sale] = await withSales([{ sku: i.sku, price: num(i.price), compareAt: i.compareAt == null ? null : num(i.compareAt) }]);
   return {
     sku: i.sku, slug: i.slug ?? '', name: i.name, unit: i.unit, description: i.description,
     brand: i.brand ? { slug: i.brand.slug, name: i.brand.name } : null,
     category: i.category ? { slug: i.category.slug, name: i.category.name } : null,
-    price: num(i.price), compareAt: i.compareAt == null ? null : num(i.compareAt),
+    price: sale.price, compareAt: sale.compareAt ?? null, saleEndsAt: sale.saleEndsAt,
     available: Math.max(0, available(i)), warrantyMonths: i.warrantyMonths, serialTracked: i.serialTracked,
     images: i.images.map(im => ({ id: im.id, src: imageUrl(im.id) })),
     specs: specFieldsFor(i.category?.slug).filter(fl => specs[fl.key] != null && specs[fl.key] !== '').map(fl => ({ label: fl.label, value: specText(fl, specs[fl.key]) })),
-    related: related.map(cardOf),
+    related: await withSales(related.map(cardOf)),
   };
 }
 export type ProductPage = NonNullable<Awaited<ReturnType<typeof productBySlug>>>;

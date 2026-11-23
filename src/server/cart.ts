@@ -7,6 +7,7 @@ import { getCustomer } from './customer-session';
 import { available } from './stock-reserve';
 import { imageUrl } from './products';
 import { FREE_SHIPPING_MIN } from '@/lib/shipping';
+import { salesFor } from './pricing';
 
 // One cart per signed-in customer (Cart.customerId), or one per browser for visitors (Cart.guestToken).
 // The visitor's cookie holds a random token and the table keeps only its hash, like the session tables.
@@ -70,12 +71,13 @@ export const cartView = cache(async () => {
     where: { cartId: c.id }, orderBy: { sku: 'asc' },
     include: { item: { include: { images: { orderBy: { ord: 'asc' }, take: 1 }, brand: true } } },
   }) : [];
+  const sales = await salesFor(items.map(ci => ci.sku));
   const lines = items.map(ci => {
     const free = Math.max(0, available(ci.item));
     const problem = !ci.item.active ? 'สินค้านี้ไม่ขายแล้ว' : free === 0 ? 'สินค้าหมด' : ci.qty > free ? `เหลือเพียง ${free} ชิ้น` : '';
     return {
       sku: ci.sku, slug: ci.item.slug ?? ci.sku.toLowerCase(), name: ci.item.name, brand: ci.item.brand?.name ?? '',
-      price: num(ci.item.price), qty: ci.qty, available: free, problem,
+      price: sales.get(ci.sku)?.price ?? num(ci.item.price), was: sales.get(ci.sku)?.was ?? null, qty: ci.qty, available: free, problem,
       image: ci.item.images[0] ? imageUrl(ci.item.images[0].id) : null,
     };
   });

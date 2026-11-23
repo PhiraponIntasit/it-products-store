@@ -17,7 +17,7 @@
 .main { flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: 24px 16px 56px; }
 .staffBar { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; align-items: center; padding: 6px 16px; font-size: 13px; background: var(--color-text); color: var(--color-bg); }
 .staffBar a { color: var(--color-bg); font-weight: 600; }
-.footStaff { max-width: 1200px; margin: 0 auto; padding: 0 16px 20px; font-size: 13px; }
+.footStaff { max-width: 1200px; margin: 0 auto; padding: 14px 16px 20px; font-size: 13px; display: flex; gap: 12px; justify-content: space-between; flex-wrap: wrap; border-top: 1px solid var(--color-divider); color: var(--color-text-2); }
 .footStaff a { color: var(--color-text-2); }
 .foot { border-top: 1px solid var(--color-divider); background: var(--color-surface); }
 .footIn { max-width: 1200px; margin: 0 auto; padding: 24px 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px 32px; font-size: 13px; color: var(--color-text-2); }
@@ -237,3 +237,80 @@
 .claimLog li .muted { font-size: 12px; }
 .claimPhotos { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
 .claimPhotos img { object-fit: cover; border-radius: 8px; border: 1px solid var(--color-divider); }
+
+/* ── home page: banners, services, flash sale, coupons, brands ── */
+.carousel { position: relative; min-width: 0; overflow: hidden; border-radius: var(--radius-lg); }
+.track { display: flex; transition: transform .6s cubic-bezier(.22,.7,.2,1); will-change: transform; }
+.banner { position: relative; flex: 0 0 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 300px; padding: 32px 72px;
+  color: #fff; text-decoration: none; overflow: hidden; background-image: radial-gradient(120% 140% at 100% 0%, rgba(255,255,255,.18) 0, rgba(255,255,255,0) 55%); }
+.banner:hover { color: #fff; }
+.bannerImg { padding: 0; background: #0f172a; }
+.bannerPic { width: 100%; height: 100%; min-height: 300px; max-height: 420px; object-fit: cover; display: block; }
+.toneCobalt { background-color: #1c45b4; }
+.toneSlate { background-color: #1e293b; }
+.toneTeal { background-color: #0f5a56; }
+.toneViolet { background-color: #4a2a99; }
+.bannerText { display: flex; flex-direction: column; gap: 10px; max-width: 58%; }
+.bannerKicker { align-self: flex-start; padding: 3px 10px; border-radius: 999px; background: rgba(255,255,255,.18); font-size: 12px; font-weight: 700; letter-spacing: .06em; }
+.bannerTitle { font-size: 34px; line-height: 1.2; }
+.bannerSub { font-size: 17px; line-height: 1.5; }
+.bannerCta { align-self: flex-start; margin-top: 6px; padding: 8px 18px; border-radius: 999px; background: #fff; color: #0f172a; font-weight: 700; }
+.bannerArt { flex: 0 0 38%; display: grid; place-items: center; filter: drop-shadow(0 18px 30px rgba(0,0,0,.35)); transform: rotate(-6deg); }
+.bannerArt svg { width: 100% !important; max-height: none !important; }
+.arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 999px; border: 0; background: rgba(255,255,255,.92); color: #0f172a;
+  font-size: 24px; line-height: 1; cursor: pointer; box-shadow: var(--shadow-md); }
+.arrowL { left: 12px; } .arrowR { right: 12px; }
+.dots { position: absolute; left: 0; right: 0; bottom: 14px; display: flex; gap: 6px; justify-content: center; }
+.dot, .dotOn { width: 10px; height: 10px; padding: 0; border-radius: 999px; border: 2px solid #fff; background: transparent; cursor: pointer; transition: width .3s; }
+.dotOn { background: #fff; width: 24px; }
+.promoTiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
+.sideCard { display: flex; flex-direction: column; gap: 6px; padding: 18px 20px; border-radius: var(--radius-lg); border: 1px solid var(--color-divider);
+  background: var(--color-surface); color: var(--color-text); text-decoration: none; }
+.sideCard:hover { border-color: var(--color-accent); color: var(--color-text); }
+.sideCard strong { font-size: 18px; }
+.sideCard span { font-size: 14px; color: var(--color-text-2); line-height: 1.5; }
+.sideCard .sideCta { margin-top: auto; color: var(--color-accent-800); font-weight: 600; }
+.brandWall { margin-top: 28px; padding: 22px; border-radius: var(--radius-lg); background: var(--color-surface); border: 1px solid var(--color-divider); }
+.brandWall h2 { margin: 0 0 14px; font-size: 20px; text-align: center; }
+.wordmark { font-weight: 800; letter-spacing: .01em; font-size: 15px; white-space: nowrap; color: var(--color-text); padding-bottom: 3px; border-bottom: 3px solid var(--brand); }
+.cdBox { display: inline-flex; flex-direction: column; align-items: center; min-width: 52px; padding: 6px 8px; border-radius: 10px; background: var(--color-surface); border: 1px solid var(--color-divider); }
+.cdBox strong { font-size: 22px; line-height: 1.1; color: var(--color-text); }
+.cdBox small { font-size: 11px; color: var(--color-text-2); }
+.staffIcon { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 999px; border: 1px solid var(--color-divider); color: var(--color-text); text-decoration: none; font-size: 13px; }
+.staffIcon:hover { border-color: var(--color-accent); color: var(--color-text); }
+.footLinks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.footLinks a { color: var(--color-text-2); }
+.services { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.services li { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: var(--radius-md); background: var(--color-accent-100); font-size: 13px; color: var(--color-accent-900); line-height: 1.5; }
+.services strong { font-size: 15px; color: var(--color-text); }
+.flash { margin-top: 32px; padding: 18px; border-radius: var(--radius-lg); background: var(--color-accent-100); border: 1px solid var(--color-accent-200); }
+.flashHead { display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 14px; }
+.flashHead h2 { margin: 0; font-size: 22px; }
+.flashHead p { margin: 4px 0 0; font-size: 14px; color: var(--color-text-2); }
+.flashTimer { display: flex; gap: 10px; align-items: center; font-size: 14px; color: var(--color-text); }
+.countdown { display: inline-flex; gap: 6px; align-items: center; }
+.coupons { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.coupon { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 14px 16px; border-radius: var(--radius-md);
+  border: 2px dashed var(--color-accent-300); background: var(--color-surface); }
+.coupon > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.coupon strong { font-size: 18px; letter-spacing: .04em; }
+.coupon span { font-size: 13px; color: var(--color-text-2); }
+.brands { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.brands a { display: grid; place-items: center; height: 56px; padding: 6px 10px; border-radius: var(--radius-md); border: 1px solid var(--color-divider); background: var(--color-bg); text-decoration: none; transition: transform .15s, border-color .15s; }
+.brands a:hover { border-color: var(--brand, var(--color-accent)); transform: translateY(-2px); }
+.brands img { max-width: 100%; max-height: 38px; object-fit: contain; }
+.pic { position: relative; }
+.flags { position: absolute; left: 8px; top: 8px; display: flex; gap: 4px; flex-wrap: wrap; }
+.flagFlash, .flagOff { font-variant-numeric: tabular-nums; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #fff; }
+.flagFlash { background: #b91c1c; }
+.flagOff { background: #1c45b4; }
+@media (max-width: 860px) {
+  .promoTiles { grid-template-columns: 1fr; }
+  .banner { min-height: 230px; padding: 22px 22px 40px; }
+  .bannerText { max-width: 70%; }
+  .bannerArt { flex-basis: 30%; }
+  .bannerTitle { font-size: 22px; }
+  .bannerSub { font-size: 14px; }
+  .arrow { display: none; }
+  .staffText { display: none; }
+}

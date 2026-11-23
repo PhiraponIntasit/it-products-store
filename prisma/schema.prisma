@@ -59,30 +59,30 @@ model PasswordReset {
 /// A product in stock. `price` = selling price incl. VAT (storefront); `cost` = purchase cost
 /// used on purchase requests and for stock value. `reserved` = units held by orders awaiting payment.
 model InventoryItem {
-  sku            String         @id
+  sku            String          @id
   name           String
   cat            String
   unit           String
   qty            Int
   min            Int
-  price          Decimal        @db.Decimal(12, 2)
-  cost           Decimal        @default(0) @db.Decimal(12, 2)
-  compareAt      Decimal?       @db.Decimal(12, 2)
+  price          Decimal         @db.Decimal(12, 2)
+  cost           Decimal         @default(0) @db.Decimal(12, 2)
+  compareAt      Decimal?        @db.Decimal(12, 2)
   loc            String
-  reserved       Int            @default(0)
-  slug           String?        @unique
+  reserved       Int             @default(0)
+  slug           String?         @unique
   categoryId     String?
-  category       Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  category       Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   brandId        String?
-  brand          Brand?         @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  brand          Brand?          @relation(fields: [brandId], references: [id], onDelete: SetNull)
   /// Key specs used by filters and the PC builder, e.g. { socket, ramType, tdpW, wattage, formFactor }
-  specs          Json           @default("{}")
-  description    String         @default("")
-  warrantyMonths Int            @default(12)
+  specs          Json            @default("{}")
+  description    String          @default("")
+  warrantyMonths Int             @default(12)
   /// Listed on the storefront
-  active         Boolean        @default(false)
-  serialTracked  Boolean        @default(false)
-  createdAt      DateTime       @default(now())
+  active         Boolean         @default(false)
+  serialTracked  Boolean         @default(false)
+  createdAt      DateTime        @default(now())
   moves          StockMove[]
   images         ProductImage[]
   serials        SerialNumber[]
@@ -90,6 +90,7 @@ model InventoryItem {
   buildItems     PcBuildItem[]
   orderLines     OrderLine[]
   claimParts     ClaimPart[]
+  promoItems     PromotionItem[]
 
   @@index([categoryId, active])
   @@index([brandId])
@@ -110,6 +111,7 @@ model Brand {
   id    String          @id @default(cuid())
   slug  String          @unique
   name  String
+  /// Logo uploaded by the shop (file name in the upload store); without one the name is shown as a wordmark
   logo  String?
   items InventoryItem[]
 }
@@ -484,7 +486,45 @@ model Coupon {
   oncePerCustomer Boolean  @default(false)
   note            String   @default("")
   active          Boolean  @default(true)
+  /// Shown on the storefront home page as a code customers can copy
+  showOnShop      Boolean  @default(false)
   createdAt       DateTime @default(now())
+}
+
+/// A storefront promotion (B). `flash`: time-limited sale prices on listed products — the sale price is what the
+/// storefront shows, the cart totals and checkout charges while it runs. `banner`: a home-page banner linking somewhere.
+model Promotion {
+  id        String          @id @default(cuid())
+  /// flash | banner
+  kind      String
+  title     String
+  subtitle  String          @default("")
+  /// Where a banner leads (an in-app path such as /shop?cat=gpu)
+  link      String          @default("")
+  /// Banner colour from a fixed palette (cobalt | slate | teal | violet)
+  tone      String          @default("cobalt")
+  /// Banner poster uploaded by the shop (file name in the upload store); without one a designed poster is drawn
+  image     String?
+  startsAt  DateTime
+  endsAt    DateTime
+  active    Boolean         @default(true)
+  sort      Int             @default(0)
+  createdAt DateTime        @default(now())
+  items     PromotionItem[]
+
+  @@index([kind, active, endsAt])
+}
+
+/// A product's sale price in a flash promotion.
+model PromotionItem {
+  promotionId String
+  promotion   Promotion     @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  sku         String
+  item        InventoryItem @relation(fields: [sku], references: [sku])
+  salePrice   Decimal       @db.Decimal(12, 2)
+
+  @@id([promotionId, sku])
+  @@index([sku])
 }
 
 /// A warranty claim a customer raises for one serial-tracked unit they bought (person A).

@@ -5,7 +5,7 @@ import { useAction } from '@/components/use-action';
 import { Dialog, Err } from '@/components/dialog';
 
 export type CouponRow = {
-  code: string; text: string; note: string; statusLabel: string; statusTag: string; active: boolean; periodText: string;
+  code: string; text: string; note: string; showOnShop: boolean; statusLabel: string; statusTag: string; active: boolean; periodText: string;
   usedText: string; paidOrders: number; discountText: string; salesText: string; form: Record<string, string>;
 };
 
@@ -24,7 +24,7 @@ export function CouponsView({ rows, today }: { rows: CouponRow[]; today: string 
           <tbody>
             {rows.map(c => (
               <tr key={c.code}>
-                <td className="tnum nw"><strong>{c.code}</strong>{c.note && <div className="muted" style={{ fontSize: 12 }}>{c.note}</div>}</td>
+                <td className="tnum nw"><strong>{c.code}</strong>{c.showOnShop && <span className="tag tag-neutral" style={{ marginLeft: 6 }}>แสดงหน้าร้าน</span>}{c.note && <div className="muted" style={{ fontSize: 12 }}>{c.note}</div>}</td>
                 <td style={{ fontSize: 13 }}>{c.text}</td>
                 <td className="tnum nw" style={{ fontSize: 13 }}>{c.periodText}</td>
                 <td className="r tnum">{c.usedText}</td>
@@ -47,7 +47,7 @@ export function CouponsView({ rows, today }: { rows: CouponRow[]; today: string 
 }
 
 function CouponDialog({ row, today, onClose }: { row: CouponRow | null; today: string; onClose: () => void }) {
-  const [f, setF] = useState<Record<string, string>>(row?.form ?? { code: '', kind: 'percent', value: '', maxDiscount: '', minSpend: '', startsOn: today, endsOn: today, usageLimit: '', oncePerCustomer: 'true', note: '' });
+  const [f, setF] = useState<Record<string, string>>(row?.form ?? { code: '', kind: 'percent', value: '', maxDiscount: '', minSpend: '', startsOn: today, endsOn: today, usageLimit: '', oncePerCustomer: 'true', showOnShop: 'false', note: '' });
   const { run, pending, error } = useAction();
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF(x => ({ ...x, [k]: e.target.value }));
   const inp = (k: string, label: string, extra: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
@@ -66,6 +66,7 @@ function CouponDialog({ row, today, onClose }: { row: CouponRow | null; today: s
         {inp('startsOn', 'ใช้ได้ตั้งแต่', { type: 'date' })}
         {inp('endsOn', 'ถึงวันที่ (รวมวันนี้)', { type: 'date' })}
         <div className="field full"><label style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={f.oncePerCustomer === 'true'} onChange={e => setF(x => ({ ...x, oncePerCustomer: String(e.target.checked) }))} /> ลูกค้าหนึ่งคนใช้ได้ครั้งเดียว</label></div>
+        <div className="field full"><label style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={f.showOnShop === 'true'} onChange={e => setF(x => ({ ...x, showOnShop: String(e.target.checked) }))} /> แสดงโค้ดนี้บนหน้าแรกของร้าน (ลูกค้ากดคัดลอกได้)</label></div>
         <div className="field full"><label htmlFor="cp-note">หมายเหตุ (ภายใน)</label><input id="cp-note" className="input" value={f.note} onChange={set('note')} maxLength={200} /></div>
       </div>
       <Err msg={error} />

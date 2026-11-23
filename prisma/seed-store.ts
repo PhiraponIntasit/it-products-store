@@ -14,6 +14,7 @@ export const CATEGORIES: [string, string][] = [
 export const BRANDS = [
   'AMD', 'Intel', 'ASUS', 'MSI', 'Gigabyte', 'Kingston', 'Corsair', 'G.Skill', 'Sapphire', 'WD', 'Crucial', 'Samsung',
   'Cooler Master', 'Seasonic', 'Lian Li', 'Montech', 'DeepCool', 'Thermalright', 'NZXT', 'LG', 'Dell', 'Logitech', 'HP', 'Lenovo', 'Generic',
+  'ASRock', 'Zotac', 'TeamGroup', 'AOC', 'Razer', 'SteelSeries', 'Fractal Design', 'Arctic', 'be quiet!',
 ];
 
 export const slugOf = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -68,6 +69,45 @@ const PRODUCTS: New[] = [
   ['MON-LG-27GR75Q', 'LG UltraGear 27GR75Q 27" QHD 165Hz', 'monitor', 'LG', 'เครื่อง', 4, 1, 7150, 8690, 'คลังใหญ่', { sizeInch: 27, resolution: '2560x1440', refreshHz: 165 }],
 ];
 
+/** More of the catalogue: [sku, name, category, brand, unit, qty, min, price, location, specs, list price (shown struck through)?].
+ *  Cost follows the category margin (costOf). */
+type More = [string, string, string, string, string, number, number, number, string, Specs, number?];
+const MORE: More[] = [
+  ['CPU-R5-7500F', 'AMD Ryzen 5 7500F', 'cpu', 'AMD', 'ชิ้น', 9, 3, 5290, 'S-01', { socket: 'AM5', cores: 6, threads: 12, tdpW: 65, igpu: 'ไม่มี' }],
+  ['CPU-R7-9700X', 'AMD Ryzen 7 9700X', 'cpu', 'AMD', 'ชิ้น', 4, 2, 12990, 'S-01', { socket: 'AM5', cores: 8, threads: 16, tdpW: 65, igpu: 'มี' }, 13900],
+  ['CPU-R9-9900X', 'AMD Ryzen 9 9900X', 'cpu', 'AMD', 'ชิ้น', 2, 1, 16990, 'S-01', { socket: 'AM5', cores: 12, threads: 24, tdpW: 120, igpu: 'มี' }],
+  ['CPU-R5-5600', 'AMD Ryzen 5 5600', 'cpu', 'AMD', 'ชิ้น', 10, 3, 3290, 'S-01', { socket: 'AM4', cores: 6, threads: 12, tdpW: 65, igpu: 'ไม่มี' }],
+  ['CPU-I3-14100F', 'Intel Core i3-14100F', 'cpu', 'Intel', 'ชิ้น', 8, 3, 3390, 'S-01', { socket: 'LGA1700', cores: 4, threads: 8, tdpW: 58, igpu: 'ไม่มี' }],
+  ['CPU-U5-245K', 'Intel Core Ultra 5 245K', 'cpu', 'Intel', 'ชิ้น', 3, 1, 10490, 'S-01', { socket: 'LGA1851', cores: 14, threads: 14, tdpW: 125, igpu: 'มี' }],
+  ['MB-ASR-B650M', 'ASRock B650M Pro RS WiFi', 'mainboard', 'ASRock', 'ชิ้น', 5, 2, 4990, 'S-02', { socket: 'AM5', chipset: 'B650', ramType: 'DDR5', formFactor: 'mATX', m2Slots: 3 }],
+  ['MB-MSI-B550', 'MSI B550 GAMING GEN3', 'mainboard', 'MSI', 'ชิ้น', 6, 2, 3290, 'S-02', { socket: 'AM4', chipset: 'B550', ramType: 'DDR4', formFactor: 'ATX', m2Slots: 2 }, 3690],
+  ['MB-GB-X870E', 'Gigabyte X870E AORUS ELITE WIFI7', 'mainboard', 'Gigabyte', 'ชิ้น', 2, 1, 12900, 'S-02', { socket: 'AM5', chipset: 'X870E', ramType: 'DDR5', formFactor: 'ATX', m2Slots: 4 }],
+  ['MB-ASUS-B760I', 'ASUS ROG STRIX B760-I GAMING WIFI', 'mainboard', 'ASUS', 'ชิ้น', 2, 1, 7490, 'S-02', { socket: 'LGA1700', chipset: 'B760', ramType: 'DDR5', formFactor: 'ITX', m2Slots: 2 }],
+  ['MB-MSI-Z890', 'MSI PRO Z890-P WIFI', 'mainboard', 'MSI', 'ชิ้น', 2, 1, 9990, 'S-02', { socket: 'LGA1851', chipset: 'Z890', ramType: 'DDR5', formFactor: 'ATX', m2Slots: 4 }],
+  ['RAM-TG-32D5', 'TeamGroup T-Force Delta RGB 32GB (2x16GB) DDR5-6000', 'ram', 'TeamGroup', 'ชุด', 8, 3, 4190, 'S-03', { ramType: 'DDR5', capacityGB: 32, modules: 2, speedMHz: 6000 }, 4590],
+  ['RAM-CR-64D5', 'Corsair Vengeance 64GB (2x32GB) DDR5-6000', 'ram', 'Corsair', 'ชุด', 3, 1, 7590, 'S-03', { ramType: 'DDR5', capacityGB: 64, modules: 2, speedMHz: 6000 }],
+  ['RAM-KF-16D4', 'Kingston FURY Beast 16GB (2x8GB) DDR4-3200', 'ram', 'Kingston', 'ชุด', 10, 3, 1390, 'S-03', { ramType: 'DDR4', capacityGB: 16, modules: 2, speedMHz: 3200 }],
+  ['VGA-ZT-4060TI', 'ZOTAC GAMING GeForce RTX 4060 Ti Twin Edge 8GB', 'vga', 'Zotac', 'ชิ้น', 4, 1, 13990, 'S-04', { chip: 'RTX 4060 Ti', vramGB: 8, tdpW: 160, lengthMm: 225 }, 14900],
+  ['VGA-MSI-5070', 'MSI GeForce RTX 5070 12G VENTUS 2X OC', 'vga', 'MSI', 'ชิ้น', 3, 1, 21900, 'S-04', { chip: 'RTX 5070', vramGB: 12, tdpW: 250, lengthMm: 242 }],
+  ['VGA-GB-5080', 'GIGABYTE GeForce RTX 5080 GAMING OC 16G', 'vga', 'Gigabyte', 'ชิ้น', 1, 1, 46900, 'S-04', { chip: 'RTX 5080', vramGB: 16, tdpW: 360, lengthMm: 340 }],
+  ['VGA-SAP-7600', 'Sapphire PULSE Radeon RX 7600 8GB', 'vga', 'Sapphire', 'ชิ้น', 5, 2, 8990, 'S-04', { chip: 'RX 7600', vramGB: 8, tdpW: 165, lengthMm: 240 }, 9590],
+  ['SSD-SS-990P2T', 'Samsung 990 PRO 2TB NVMe', 'ssd', 'Samsung', 'ชิ้น', 5, 2, 6290, 'A-02', { interface: 'NVMe PCIe 4.0', capacityGB: 2000, formFactor: 'M.2 2280' }, 6990],
+  ['SSD-KS-NV3', 'Kingston NV3 1TB NVMe', 'ssd', 'Kingston', 'ชิ้น', 12, 4, 2190, 'A-02', { interface: 'NVMe PCIe 4.0', capacityGB: 1000, formFactor: 'M.2 2280' }],
+  ['SSD-CR-MX500', 'Crucial MX500 1TB SATA 2.5"', 'ssd', 'Crucial', 'ชิ้น', 8, 3, 2390, 'A-02', { interface: 'SATA', capacityGB: 1000, formFactor: '2.5"' }],
+  ['PSU-MSI-A650', 'MSI MAG A650BN 650W', 'psu', 'MSI', 'ชิ้น', 7, 2, 1790, 'S-05', { wattage: 650, efficiency: '80 PLUS Bronze' }],
+  ['PSU-BQ-1000', 'be quiet! Pure Power 12 M 1000W', 'psu', 'be quiet!', 'ชิ้น', 2, 1, 5990, 'S-05', { wattage: 1000, efficiency: '80 PLUS Gold' }],
+  ['CASE-NZ-H5', 'NZXT H5 Flow (2024)', 'case', 'NZXT', 'ชิ้น', 4, 1, 3290, 'คลังใหญ่', { formFactors: ['ATX', 'mATX', 'ITX'], maxGpuLengthMm: 365 }],
+  ['CASE-FD-N5', 'Fractal Design North', 'case', 'Fractal Design', 'ชิ้น', 2, 1, 4990, 'คลังใหญ่', { formFactors: ['ATX', 'mATX', 'ITX'], maxGpuLengthMm: 355 }],
+  ['COOL-AR-LF240', 'Arctic Liquid Freezer III 240', 'cooler', 'Arctic', 'ชิ้น', 4, 1, 3290, 'S-06', { sockets: ['AM5', 'AM4', 'LGA1851', 'LGA1700'], maxTdpW: 300, radiatorMm: 240 }, 3590],
+  ['COOL-DC-AG400', 'DeepCool AG400', 'cooler', 'DeepCool', 'ชิ้น', 10, 3, 690, 'S-06', { sockets: ['AM5', 'AM4', 'LGA1851', 'LGA1700'], maxTdpW: 220 }],
+  ['MON-AOC-24G2', 'AOC 24G2SP 24" IPS 165Hz', 'monitor', 'AOC', 'เครื่อง', 6, 2, 4590, 'คลังใหญ่', { sizeInch: 24, resolution: '1920x1080', refreshHz: 165 }, 4990],
+  ['MON-ASUS-27Q', 'ASUS TUF Gaming VG27AQ3A 27" QHD 180Hz', 'monitor', 'ASUS', 'เครื่อง', 4, 1, 7490, 'คลังใหญ่', { sizeInch: 27, resolution: '2560x1440', refreshHz: 180 }],
+  ['KB-RZ-BWV4', 'Razer BlackWidow V4 X Mechanical', 'peripheral', 'Razer', 'ชิ้น', 5, 2, 3990, 'C-03', { connection: 'USB' }],
+  ['MOU-LG-G502X', 'Logitech G502 X Lightspeed', 'peripheral', 'Logitech', 'ชิ้น', 6, 2, 4290, 'C-03', { connection: 'Wireless 2.4GHz' }, 4790],
+  ['HS-SS-A7', 'SteelSeries Arctis Nova 7 Wireless', 'peripheral', 'SteelSeries', 'ชิ้น', 4, 1, 6490, 'C-03', { connection: 'Wireless 2.4GHz / Bluetooth' }],
+  ['CBL-DP-2M', 'DisplayPort 1.4 Cable 2m', 'cable', 'Generic', 'เส้น', 15, 5, 350, 'C-02', { lengthM: 2, version: 'DP 1.4' }],
+];
+
 /** [name, tax ID, phone, email] — fictitious distributors for the demo */
 export const SUPPLIERS: [string, string, string, string][] = [
   ['บจก. ไอทีซัพพลาย', '0105551234567', '02-111-2233', 'sales@itsupply.example'],
@@ -89,13 +129,21 @@ export async function seedStore(db: PrismaClient, stockedAt: Date, by: string) {
       categoryId: 'cat-' + cat, brandId: 'brand-' + slugOf(brand), slug: slugOf(sku), active: true, warrantyMonths: 36,
     })),
   });
-  await db.stockMove.createMany({ data: PRODUCTS.map(([sku, , , , , qty]) => ({ t: stockedAt, sku, type: 'in', qty, ref: 'ยอดตั้งต้น', by })) });
+  await db.inventoryItem.createMany({
+    data: MORE.map(([sku, name, cat, brand, unit, qty, min, price, loc, specs, compareAt]) => ({
+      sku, name, cat: CATEGORIES.find(c => c[0] === cat)![1], unit, qty, min, cost: costOf(cat, price), price, compareAt: compareAt ?? null, loc, specs,
+      categoryId: 'cat-' + cat, brandId: 'brand-' + slugOf(brand), slug: slugOf(sku), active: true,
+      warrantyMonths: ['peripheral', 'cable'].includes(cat) ? 12 : 36,
+    })),
+  });
+  const all = [...PRODUCTS.map(p => [p[0], p[2], p[5]] as const), ...MORE.map(m => [m[0], m[2], m[5]] as const)];
+  await db.stockMove.createMany({ data: all.map(([sku, , qty]) => ({ t: stockedAt, sku, type: 'in', qty, ref: 'ยอดตั้งต้น', by })) });
 
   // CPUs, graphics cards and mainboards carry a manufacturer warranty per unit, so they are sold by serial
-  const tracked = PRODUCTS.filter(p => SERIAL_CATS.includes(p[2]));
+  const tracked = all.filter(p => SERIAL_CATS.includes(p[1]));
   await db.inventoryItem.updateMany({ where: { sku: { in: tracked.map(p => p[0]) } }, data: { serialTracked: true } });
   await db.serialNumber.createMany({
-    data: tracked.flatMap(([sku, , , , , qty]) => Array.from({ length: qty }, (_, k) => ({ serial: `${sku}-SN${String(k + 1).padStart(4, '0')}`, sku, receivedRef: 'ยอดตั้งต้น' }))),
+    data: tracked.flatMap(([sku, , qty]) => Array.from({ length: qty }, (_, k) => ({ serial: `${sku}-SN${String(k + 1).padStart(4, '0')}`, sku, receivedRef: 'ยอดตั้งต้น' }))),
   });
 }
 
@@ -137,4 +185,24 @@ export async function seedSales(db: PrismaClient, passwordHash: string) {
     } });
   }
   await db.coupon.update({ where: { code: 'SAVE300' }, data: { used: await db.order.count({ where: { couponCode: 'SAVE300' } }) } });
+}
+
+/** Storefront promotions running now: a flash sale (ends in ~2½ days, so the countdown shows), home-page banners,
+ *  and coupons shown on the home page. Flash-sale items are products no test pins a price on. */
+export async function seedPromotions(db: PrismaClient) {
+  const h = 3600e3, now = Date.now();
+  await db.promotion.create({ data: {
+    kind: 'flash', title: 'Flash Sale ปลายเดือน', subtitle: 'ลดแรงเฉพาะช่วงนี้ หมดเวลากลับเป็นราคาปกติ', startsAt: new Date(now - 6 * h), endsAt: new Date(now + 62 * h),
+    items: { create: [
+      { sku: 'CPU-R5-7500F', salePrice: 4790 }, { sku: 'VGA-MSI-5070', salePrice: 20490 }, { sku: 'RAM-TG-32D5', salePrice: 3790 },
+      { sku: 'SSD-KS-NV3', salePrice: 1890 }, { sku: 'MON-AOC-24G2', salePrice: 3990 }, { sku: 'MOU-LG-G502X', salePrice: 3590 },
+      { sku: 'COOL-DC-AG400', salePrice: 590 }, { sku: 'PSU-MSI-A650', salePrice: 1590 },
+    ] },
+  } });
+  await db.promotion.createMany({ data: [
+    { kind: 'banner', title: 'ประกอบคอมเองง่าย ระบบเช็คความเข้ากันให้', subtitle: 'เลือกทีละชิ้น ระบบเตือนทันทีถ้า Socket แรม หรือขนาดเคสไม่ตรง', link: '/build', tone: 'cobalt', sort: 0, startsAt: new Date(now - 30 * 24 * h), endsAt: new Date(now + 60 * 24 * h) },
+    { kind: 'banner', title: 'การ์ดจอรุ่นใหม่ RTX 50 Series', subtitle: 'พร้อมส่ง รับประกัน 3 ปี เคลมออนไลน์ได้ที่บัญชีของคุณ', link: '/shop?cat=vga', tone: 'slate', sort: 1, startsAt: new Date(now - 7 * 24 * h), endsAt: new Date(now + 30 * 24 * h) },
+    { kind: 'banner', title: 'ลูกค้าใหม่ลด 10% ใส่โค้ด WELCOME10', subtitle: 'ลดสูงสุด ฿500 ใช้ได้คนละครั้ง', link: '/shop', tone: 'teal', sort: 2, startsAt: new Date(now - 30 * 24 * h), endsAt: new Date(now + 90 * 24 * h) },
+  ] });
+  await db.coupon.updateMany({ where: { code: { in: ['WELCOME10', 'SAVE300'] } }, data: { showOnShop: true } });
 }
