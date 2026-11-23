@@ -1,12 +1,9 @@
--- Storefront live chat (person A): conversations from the chat widget and their messages. A thread starts with the
--- assistant (status bot), is handed to staff (waiting), taken by a staff member (open) and closed. Guests are tied to a cookie (sha256 only).
+-- Storefront live chat (person A): conversations from the chat widget and their messages. Chat is for signed-in
+-- customers only. A thread starts with the assistant (status bot), is handed to staff (waiting), taken by a staff member (open) and closed.
 -- CreateTable
 CREATE TABLE "ChatThread" (
     "id" TEXT NOT NULL,
-    "customerId" TEXT,
-    "guestToken" TEXT,
-    "guestName" TEXT NOT NULL DEFAULT '',
-    "guestEmail" TEXT NOT NULL DEFAULT '',
+    "customerId" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'bot',
     "assigneeId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -33,9 +30,6 @@ CREATE TABLE "ChatMessage" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ChatThread_guestToken_key" ON "ChatThread"("guestToken");
-
--- CreateIndex
 CREATE INDEX "ChatThread_status_updatedAt_idx" ON "ChatThread"("status", "updatedAt");
 
 -- CreateIndex
@@ -45,7 +39,7 @@ CREATE INDEX "ChatThread_customerId_idx" ON "ChatThread"("customerId");
 CREATE INDEX "ChatMessage_threadId_id_idx" ON "ChatMessage"("threadId", "id");
 
 -- AddForeignKey
-ALTER TABLE "ChatThread" ADD CONSTRAINT "ChatThread_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "ChatThread" ADD CONSTRAINT "ChatThread_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ChatThread" ADD CONSTRAINT "ChatThread_assigneeId_fkey" FOREIGN KEY ("assigneeId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;

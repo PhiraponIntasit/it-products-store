@@ -612,17 +612,12 @@ model ClaimPart {
 
 // ── Storefront chat (person A) ──────────────────────────────────────────────
 
-/// One conversation from the storefront chat widget. A signed-in customer is linked by customerId; a visitor by a
-/// cookie (only its sha256 is stored). bot → waiting (needs staff) → open (a staff member took it) → closed.
+/// One conversation from the storefront chat widget. Chat is for signed-in customers only (a visitor is asked to sign in),
+/// so every conversation belongs to a customer account. bot → waiting (needs staff) → open (a staff member took it) → closed.
 model ChatThread {
   id             String        @id @default(cuid())
-  customerId     String?
-  customer       Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  /// sha256 of the visitor's chat cookie
-  guestToken     String?       @unique
-  /// Name / email a visitor typed in, so staff can address them and reply by email
-  guestName      String        @default("")
-  guestEmail     String        @default("")
+  customerId     String
+  customer       Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
   /// bot | waiting | open | closed
   status         String        @default("bot")
   assigneeId     String?
