@@ -167,6 +167,7 @@ function ListingCard({ product, saved, onToggle, pending }: { product: ProductDe
         {checks.map(([ok, label]) => <div key={label} className={css.check}><span className={ok ? css.ok : css.miss}>{ok ? '✓' : '○'}</span>{label}</div>)}
         <div className={css.check}><span className={product.images.length ? css.ok : css.miss}>{product.images.length ? '✓' : '○'}</span>มีรูปสินค้า (แนะนำ)</div>
       </div>
+      {product.active && saved.slug && <a className="btn btn-secondary" href={`/p/${saved.slug}`} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>ดูหน้าสินค้าบนหน้าร้าน ↗</a>}
       {product.active
         ? <button className="btn btn-secondary" disabled={pending} onClick={() => onToggle(false)}>ซ่อนจากหน้าร้าน</button>
         : <button className="btn btn-primary" disabled={pending || !ready} onClick={() => onToggle(true)}>เปิดขาย</button>}

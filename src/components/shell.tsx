@@ -55,6 +55,7 @@ export function Sidebar({ nav, me }: { nav: { key: string; num: string; label: s
             <div style={{ fontSize: 11, color: 'var(--color-neutral-700)' }}>{me.roleLabel} · {me.username}</div>
           </div>
         </div>
+        <a className="btn btn-secondary" href="/" target="_blank" rel="noreferrer" style={{ justifyContent: 'flex-start', textDecoration: 'none' }}>เปิดหน้าร้าน ↗</a>
         <ChangePasswordButton />
         <button className="btn btn-secondary" style={{ justifyContent: 'flex-start' }} disabled={pending} onClick={() => start(() => logout())}>
           <LogoutIcon /> ออกจากระบบ
