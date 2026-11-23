@@ -2,7 +2,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { chatEnd, chatSend } from '@/server/actions/chat';
+import { chatAskStaff, chatEnd, chatSend } from '@/server/actions/chat';
+import { ASK_STAFF, linkParts, QUICK_REPLIES } from '@/lib/chat';
 import type { ChatMsg, CustomerChat } from '@/server/chat';
 import css from './chat.module.css';
 
@@ -71,14 +72,22 @@ export function ChatWidget() {
   }, [open]);
   useEffect(() => { box.current?.scrollTo({ top: box.current.scrollHeight }); }, [msgs.length, open]);
 
-  const send = async () => {
-    const t = text.trim();
+  const send = async (preset?: string) => {
+    const t = (preset ?? text).trim();
     if (!t || sending) return;
     setSending(true); setError('');
     const r = await chatSend(t);
     setSending(false);
     if (!r.ok) { setError(r.error); return; }
-    setText('');
+    if (!preset) setText('');
+    await poll();
+  };
+  const askStaff = async () => {
+    if (sending) return;
+    setSending(true); setError('');
+    const r = await chatAskStaff();
+    setSending(false);
+    if (!r.ok) { setError(r.error); return; }
     await poll();
   };
   const end = async () => {
@@ -88,7 +97,7 @@ export function ChatWidget() {
   };
 
   const th = state?.thread;
-  const status = state && !state.signedIn ? 'สำหรับสมาชิก' : !th || th.status === 'closed' ? 'ทีมงานตอบในเวลาทำการ' : th.status === 'open' ? `${th.staff || 'พนักงาน'} กำลังดูแลคุณ` : th.status === 'waiting' ? 'รอพนักงานตอบ…' : th.statusLabel;
+  const status = state && !state.signedIn ? 'สำหรับสมาชิก' : !th || th.status === 'closed' || th.status === 'bot' ? 'ผู้ช่วยอัตโนมัติ · ตอบทันที' : th.status === 'open' ? `${th.staff || 'พนักงาน'} กำลังดูแลคุณ` : th.status === 'waiting' ? 'รอพนักงานตอบ…' : th.statusLabel;
 
   return (
     <>
@@ -115,7 +124,7 @@ export function ChatWidget() {
 
           <div className={css.body} ref={box} aria-live="polite">
             {!msgs.length && (
-              <p className={css.hello}>สวัสดีครับ{state?.name ? ` คุณ${state.name.split(' ')[0]}` : ''} 👋 สอบถามเรื่องสินค้า จัดสเปค คำสั่งซื้อ หรือเคลมได้เลย พนักงานจะตอบในหน้าต่างนี้ และแจ้งทางอีเมลถ้าคุณออกจากหน้าเว็บไปแล้ว</p>
+              <p className={css.hello}>สวัสดีครับ{state?.name ? ` คุณ${state.name.split(' ')[0]}` : ''} 👋 ผู้ช่วยอัตโนมัติตอบเรื่องคำสั่งซื้อ เคลม ค่าส่ง จัดสเปค และค้นหาสินค้าได้ทันที เลือกหัวข้อด้านล่างหรือพิมพ์ถามได้เลย ถ้าต้องการพนักงาน กด “คุยกับพนักงาน”</p>
             )}
             {msgs.map(m => m.role === 'system'
               ? <p key={m.id} className={css.sys}>{m.text}</p>
@@ -123,7 +132,9 @@ export function ChatWidget() {
                 <div key={m.id} className={`${css.row} ${m.role === 'customer' ? css.me : ''}`} data-role={m.role}>
                   <div className={css.bubble}>
                     {m.role !== 'customer' && <span className={css.who}>{m.role === 'bot' ? 'ผู้ช่วยอัตโนมัติ' : m.by || 'พนักงาน'}</span>}
-                    <span className={css.text}>{m.text}</span>
+                    <span className={css.text}>{m.role === 'customer' ? m.text : linkParts(m.text).map((p, i) => p.href
+                      ? <Link key={i} href={p.href} target={p.href.startsWith('http') ? '_blank' : undefined} rel="noopener">{p.text}</Link>
+                      : <span key={i}>{p.text}</span>)}</span>
                     <span className={css.time}>{timeOf(m.at)}</span>
                   </div>
                 </div>
@@ -139,11 +150,17 @@ export function ChatWidget() {
               </div>
             </div>
           ) : (<>
+          {(!th || th.status === 'bot' || th.status === 'closed') && (
+            <div className={css.quick} role="group" aria-label="หัวข้อที่ถามบ่อย">
+              <button type="button" className={`chip sm ${css.staffChip}`} disabled={sending} onClick={askStaff}>{ASK_STAFF}</button>
+              {QUICK_REPLIES.map(q => <button key={q} type="button" className="chip sm" disabled={sending} onClick={() => send(q)}>{q}</button>)}
+            </div>
+          )}
           {error && <p className={css.err} role="alert">{error}</p>}
           <form className={css.compose} onSubmit={e => { e.preventDefault(); send(); }}>
             <textarea ref={input} className="input" rows={2} value={text} maxLength={MAX} placeholder="พิมพ์ข้อความ…" aria-label="ข้อความ"
               onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }} />
-            <button className="btn btn-primary" disabled={sending || !text.trim()}>ส่ง</button>
+            <button className="btn btn-primary" aria-label="ส่งข้อความ" disabled={sending || !text.trim()}>ส่ง</button>
           </form>
           </>)}
         </section>
