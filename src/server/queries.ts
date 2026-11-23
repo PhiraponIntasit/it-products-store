@@ -5,6 +5,7 @@ import { can } from './auth';
 import { canDecide } from '@/lib/domain';
 import { CLAIM_SLA_DAYS } from './claim-service';
 import { available } from './stock-reserve';
+import { chatBadge } from './chat';
 
 /** SKUs that already have a PR in flight (pending, pending_exec or approved) — never suggest re-ordering these. */
 export async function openPrSkus() {
@@ -43,7 +44,10 @@ export async function shellData(me: User) {
     tech ? 0 : db.claim.count({ where: { status: 'received', assigneeId: null } }),
   ]) : [0, 0, 0, 0];
   const lowNoPR = low?.lowNoPR ?? [];
-  Object.assign(badges, { claims: claimsNew + claimsHeld, approvals: pendingN, inventory: lowNoPR.length, purchase: approvedMine, orders: toPack + lateMoney });
+  const chat = can(me, 'chat') ? await chatBadge(me.id) : { waiting: 0, mineUnread: 0 };
+  if (chat.waiting) notifs.push({ text: `แชทลูกค้ารอพนักงาน ${chat.waiting} รายการ`, sub: 'แชทลูกค้า', href: '/chat?tab=waiting' });
+  if (chat.mineUnread) notifs.push({ text: `ลูกค้าตอบแชทที่คุณดูแล ${chat.mineUnread} รายการ`, sub: 'แชทลูกค้า', href: '/chat?tab=mine' });
+  Object.assign(badges, { chat: chat.waiting + chat.mineUnread, claims: claimsNew + claimsHeld, approvals: pendingN, inventory: lowNoPR.length, purchase: approvedMine, orders: toPack + lateMoney });
 
   if (tech && claimsHeld) notifs.push({ text: `เคลมที่มอบหมายให้คุณ ${claimsHeld} เรื่อง`, sub: 'ตรวจเครื่องและบันทึกผล', href: '/claims?tab=mine' });
   if (claimsUnassigned) notifs.push({ text: `เคลมที่รับเครื่องแล้วแต่ยังไม่มอบหมายช่าง ${claimsUnassigned} เรื่อง`, sub: 'เคลมสินค้า', href: '/claims?tab=received' });

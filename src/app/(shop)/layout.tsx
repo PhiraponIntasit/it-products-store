@@ -5,6 +5,7 @@ import { cartView } from '@/server/cart';
 import { Logo } from '@/components/logo';
 import { SHOP } from '@/lib/shop';
 import { FREE_SHIPPING_MIN, UPCOUNTRY_FEE } from '@/lib/shipping';
+import { ChatWidget } from './chat-widget';
 import css from './storefront.module.css';
 
 // Storefront frame: header with search, the page, and a footer with the shop's details and policies.
@@ -62,6 +63,7 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
           <span>© {new Date().getFullYear()} {SHOP.brand} · ข้อมูลร้านเป็นข้อมูลสมมติสำหรับโครงงาน</span>
         </div>
       </footer>
+      <ChatWidget />
     </div>
   );
 }

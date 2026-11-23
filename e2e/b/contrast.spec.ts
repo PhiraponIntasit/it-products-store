@@ -53,7 +53,7 @@ function measure(): Hit[] {
   return out;
 }
 
-const PAGES = ['/dashboard', '/sales?p=90d', '/inventory', '/products', '/products/CPU-R5-7600', '/orders?tab=all', '/coupons', '/customers', '/customers/cus-demo', '/claims',
+const PAGES = ['/dashboard', '/sales?p=90d', '/inventory', '/products', '/products/CPU-R5-7600', '/orders?tab=all', '/coupons', '/customers', '/customers/cus-demo', '/chat', '/claims',
   '/warranty?q=CPU-R5-7600-SN0001', '/purchase', '/purchase/suppliers', '/approvals', '/users', '/audit',
   '/', '/shop', '/shop?cat=cpu', '/p/cpu-r5-7600', '/account/login', '/account/register', '/cart', '/build?cpu=CPU-I5-14400F&mainboard=MB-TUF-B650&pick=ram'];
 
