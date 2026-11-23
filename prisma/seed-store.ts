@@ -204,7 +204,7 @@ export async function seedPromotions(db: PrismaClient) {
     ] },
   } });
   await db.promotion.createMany({ data: [
-    { kind: 'banner', slot: 'side', image: await storeAsset('banners/build.png'), title: 'ประกอบคอมเองง่าย ระบบเช็คความเข้ากันให้', subtitle: 'เลือกทีละชิ้น ระบบเตือนทันทีถ้า Socket แรม หรือขนาดเคสไม่ตรง', link: '/build', tone: 'cobalt', sort: 1, startsAt: new Date(now - 30 * 24 * h), endsAt: new Date(now + 60 * 24 * h) },
+    { kind: 'banner', slot: 'side', image: await storeAsset('banners/build-check.webp'), title: 'จัดสเปคเองไม่ต้องกลัวพลาด', subtitle: 'ระบบเช็ค Socket แรม เคส และกำลังไฟให้ทุกชิ้น', link: '/build', tone: 'cobalt', sort: 1, startsAt: new Date(now - 30 * 24 * h), endsAt: new Date(now + 60 * 24 * h) },
     { kind: 'banner', image: await storeAsset('banners/rtx50.png'), title: 'การ์ดจอรุ่นใหม่ RTX 50 Series', subtitle: 'พร้อมส่ง รับประกัน 3 ปี เคลมออนไลน์ได้ที่บัญชีของคุณ', link: '/shop?cat=vga', tone: 'slate', sort: 1, startsAt: new Date(now - 7 * 24 * h), endsAt: new Date(now + 30 * 24 * h) },
     { kind: 'banner', image: await storeAsset('banners/welcome10.png'), title: 'ลูกค้าใหม่ลด 10% ใส่โค้ด WELCOME10', subtitle: 'ลดสูงสุด ฿500 ใช้ได้คนละครั้ง', link: '/shop', tone: 'teal', sort: 2, startsAt: new Date(now - 30 * 24 * h), endsAt: new Date(now + 90 * 24 * h) },
   ] });
@@ -290,21 +290,21 @@ async function seedCampaigns(db: PrismaClient) {
     { code: 'NEWPC', kind: 'fixed', value: 500, minSpend: 25000, ...newYear, showOnShop: true, note: 'ปีใหม่ จัดสเปคครบชุด ลด 500 ขั้นต่ำ 25,000' },
   ] });
 
-  // Banners without a poster use the shop's designed banner (title, subtitle and colour); a poster can be uploaded later.
+  // Posters from the team (prisma/seed-assets/banners); a banner without one shows the shop's designed banner instead.
   // Festivals come first (sort 0), then the team's posters (1-2), then the always-on ones.
   await db.promotion.createMany({ data: [
-    { kind: 'banner', title: 'BLACK FRIDAY ลดแรงสุดปี', subtitle: `เมาส์ หูฟัง คีย์บอร์ด ลดสูงสุด ${bfMax}% · การ์ดจอ ซีพียูก็ลด · 4 วันเท่านั้น`, link: '/#flash', tone: 'slate', sort: 0, ...bf },
-    { kind: 'banner', title: 'ของขวัญวันพ่อ อัปเกรดคอมให้พ่อ', subtitle: 'จอ เมาส์ คีย์บอร์ด ใส่โค้ด DAD5 ลดเพิ่ม 5%', link: '/shop?cat=peripheral', tone: 'violet', sort: 0, ...dad },
-    { kind: 'banner', title: '12.12 ลดใหญ่ส่งท้ายปี', subtitle: 'ใส่โค้ด 1212 ลดทันที ฿1,212 เมื่อซื้อครบ ฿12,000', link: '/shop', tone: 'cobalt', sort: 0, ...d1212 },
-    { kind: 'banner', slot: 'side', title: 'ปีใหม่ เครื่องใหม่', subtitle: 'จัดสเปคครบชุด ใส่โค้ด NEWPC ลดเพิ่ม ฿500', link: '/build', tone: 'teal', sort: 0, ...newYear },
-    { kind: 'banner', title: 'Back to School คอมเรียนงบไม่เกิน 20,000', subtitle: 'สเปคพร้อมเรียน ทำงาน เล่นเกมเบาๆ', link: '/build', tone: 'teal', sort: 0, ...school },
-    ...(payday ? [{ kind: 'banner', title: 'เงินเดือนออก ช้อปเลย!', subtitle: 'Flash Sale ปลายเดือน หมดเวลาแล้วหมดเลย', link: '/#flash', tone: 'cobalt', sort: 3, startsAt: payday.startsAt, endsAt: payday.endsAt }] : []),
-    { kind: 'banner', title: 'อัปเฟรมเรต ไม่ต้องเปลี่ยนทั้งเครื่อง', subtitle: 'การ์ดจอ RTX 40/50 · Radeon RX ราคาพิเศษ', link: '/shop?cat=vga', tone: 'slate', sort: 4, ...always },
-    { kind: 'banner', title: 'Work From Home ให้ลื่นกว่าเดิม', subtitle: 'จอ 27" 4K · เมาส์ไร้สาย · คีย์บอร์ดเงียบ', link: '/shop?cat=monitor', tone: 'teal', sort: 5, ...always },
-    { kind: 'banner', title: 'เครื่องช้า? เพิ่มแรม เปลี่ยน SSD เร็วขึ้นทันที', subtitle: 'SSD NVMe 1TB เริ่มต้น ฿2,190', link: '/shop?cat=ssd', tone: 'violet', sort: 6, ...always },
-    { kind: 'banner', title: 'ของแท้ทุกชิ้น เช็คประกันด้วย Serial', subtitle: 'แจ้งเคลมออนไลน์ ติดตามงานช่างได้ในบัญชี', link: '/account/claims', tone: 'cobalt', sort: 7, ...always },
-    { kind: 'banner', title: 'จ่ายง่ายด้วย PromptPay QR', subtitle: 'ยืนยันการชำระอัตโนมัติ ได้ใบกำกับภาษีทันที', link: '/shop', tone: 'teal', sort: 8, ...always },
-    { kind: 'banner', title: 'ซื้อครบ ฿2,000 ส่งฟรีทั่วประเทศ', subtitle: 'กรุงเทพฯ และปริมณฑลส่งฟรีทุกออเดอร์', link: '/shop', tone: 'cobalt', sort: 9, ...always },
+    { kind: 'banner', image: await storeAsset('banners/black-friday.webp'), title: 'BLACK FRIDAY ลดแรงสุดปี', subtitle: `เมาส์ หูฟัง คีย์บอร์ด ลดสูงสุด ${bfMax}% · การ์ดจอ ซีพียูก็ลด · 4 วันเท่านั้น`, link: '/#flash', tone: 'slate', sort: 0, ...bf },
+    { kind: 'banner', image: await storeAsset('banners/fathers-day.webp'), title: 'ของขวัญวันพ่อ อัปเกรดคอมให้พ่อ', subtitle: 'จอ เมาส์ คีย์บอร์ด ใส่โค้ด DAD5 ลดเพิ่ม 5%', link: '/shop?cat=peripheral', tone: 'violet', sort: 0, ...dad },
+    { kind: 'banner', image: await storeAsset('banners/1212.webp'), title: '12.12 ลดใหญ่ส่งท้ายปี', subtitle: 'ใส่โค้ด 1212 ลดทันที ฿1,212 เมื่อซื้อครบ ฿12,000', link: '/shop', tone: 'cobalt', sort: 0, ...d1212 },
+    { kind: 'banner', image: await storeAsset('banners/new-year.webp'), slot: 'side', title: 'ปีใหม่ เครื่องใหม่', subtitle: 'จัดสเปคครบชุด ใส่โค้ด NEWPC ลดเพิ่ม ฿500', link: '/build', tone: 'teal', sort: 0, ...newYear },
+    { kind: 'banner', image: await storeAsset('banners/back-to-school.webp'), title: 'Back to School คอมเรียนงบไม่เกิน 20,000', subtitle: 'สเปคพร้อมเรียน ทำงาน เล่นเกมเบาๆ', link: '/build', tone: 'teal', sort: 0, ...school },
+    ...(payday ? [{ kind: 'banner', image: await storeAsset('banners/payday.webp'), title: 'เงินเดือนออก ช้อปเลย!', subtitle: 'Flash Sale ปลายเดือน หมดเวลาแล้วหมดเลย', link: '/#flash', tone: 'cobalt', sort: 3, startsAt: payday.startsAt, endsAt: payday.endsAt }] : []),
+    { kind: 'banner', image: await storeAsset('banners/gaming.webp'), title: 'อัปเฟรมเรต ไม่ต้องเปลี่ยนทั้งเครื่อง', subtitle: 'การ์ดจอ RTX 40/50 · Radeon RX ราคาพิเศษ', link: '/shop?cat=vga', tone: 'slate', sort: 4, ...always },
+    { kind: 'banner', image: await storeAsset('banners/work-from-home.webp'), title: 'Work From Home ให้ลื่นกว่าเดิม', subtitle: 'จอ 27" 4K · เมาส์ไร้สาย · คีย์บอร์ดเงียบ', link: '/shop?cat=monitor', tone: 'teal', sort: 5, ...always },
+    { kind: 'banner', image: await storeAsset('banners/upgrade.webp'), title: 'เครื่องช้า? เพิ่มแรม เปลี่ยน SSD เร็วขึ้นทันที', subtitle: 'SSD NVMe 1TB เริ่มต้น ฿2,190', link: '/shop?cat=ssd', tone: 'violet', sort: 6, ...always },
+    { kind: 'banner', image: await storeAsset('banners/warranty.webp'), title: 'ของแท้ทุกชิ้น เช็คประกันด้วย Serial', subtitle: 'แจ้งเคลมออนไลน์ ติดตามงานช่างได้ในบัญชี', link: '/account/claims', tone: 'cobalt', sort: 7, ...always },
+    { kind: 'banner', image: await storeAsset('banners/promptpay.webp'), title: 'จ่ายง่ายด้วย PromptPay QR', subtitle: 'ยืนยันการชำระอัตโนมัติ ได้ใบกำกับภาษีทันที', link: '/shop', tone: 'teal', sort: 8, ...always },
+    { kind: 'banner', image: await storeAsset('banners/free-shipping.webp'), title: 'ซื้อครบ ฿2,000 ส่งฟรีทั่วประเทศ', subtitle: 'กรุงเทพฯ และปริมณฑลส่งฟรีทุกออเดอร์', link: '/shop', tone: 'cobalt', sort: 9, ...always },
   ] });
 }
 
@@ -313,7 +313,7 @@ async function seedCampaigns(db: PrismaClient) {
 const ASSETS = path.resolve(__dirname, 'seed-assets');
 async function storeAsset(rel: string) {
   const buf = await readFile(path.join(ASSETS, rel));
-  const ext = rel.endsWith('.jpg') ? 'jpg' : 'png', type = ext === 'jpg' ? 'image/jpeg' : 'image/png';
+  const ext = (path.extname(rel).slice(1) || 'png') as 'jpg' | 'png' | 'webp', type = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' }[ext];
   const file = `${randomBytes(16).toString('hex')}.${ext}`;
   if (process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN) {
     const { put } = await import('@vercel/blob');

@@ -170,7 +170,7 @@ test('a poster uploaded for a banner shows on the home page; a brand logo replac
 test('seeded posters and logos: a tall side poster beside the slides, brand logos that lead to the brand', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
-  const side = page.getByRole('link', { name: 'ประกอบคอมเองง่าย ระบบเช็คความเข้ากันให้' });
+  const side = page.getByRole('link', { name: 'จัดสเปคเองไม่ต้องกลัวพลาด' });
   await expect(side.locator('img')).toHaveCount(1);
   const slides = page.getByRole('region', { name: 'โปรโมชั่น' });
   await expect(slides.locator('img[alt="การ์ดจอรุ่นใหม่ RTX 50 Series"]')).toHaveCount(1);
