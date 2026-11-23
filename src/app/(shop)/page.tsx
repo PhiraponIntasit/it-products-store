@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { homeData } from '@/server/storefront';
 import { FREE_SHIPPING_MIN } from '@/lib/shipping';
-import { ProductRail } from './product-card';
+import { ProductRail } from './product-rail';
 import { BannerCarousel, Countdown, CouponCard } from './home-widgets';
 import { accentOf } from './product-art';
 import css from './storefront.module.css';
